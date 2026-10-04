@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
+import {recolorSpeedsterSuit,speedsterColorForIndex} from './superhero.js';
 
 const POLL_MS=120;
 const LOCAL_DEV=import.meta.env.DEV;
@@ -33,13 +34,13 @@ export class Multiplayer{
     for(const [id,avatar] of this.avatars)if(!present.has(id)){this.scene.remove(avatar.root);this.avatars.delete(id);}
     for(const player of players){
       let avatar=this.avatars.get(player.id);
-      if(!avatar){avatar=this.createAvatar(player.id);this.avatars.set(player.id,avatar);this.scene.add(avatar.root);}
+      if(!avatar){avatar=this.createAvatar(player.id,player.colorIndex);this.avatars.set(player.id,avatar);this.scene.add(avatar.root);}
       avatar.state=player;
     }
   }
 
-  createAvatar(id){
-    const root=new THREE.Group(),model=clone(this.template);root.add(model);model.traverse(object=>{if(object.isMesh){object.material=object.material.clone();object.material.color?.offsetHSL(((hash(id)%9)-4)*.018,.04,0);}});
+  createAvatar(id,colorIndex=0){
+    const root=new THREE.Group(),model=clone(this.template);root.add(model);model.traverse(object=>{if(object.isMesh)object.material=object.material.clone();});recolorSpeedsterSuit(model,speedsterColorForIndex(colorIndex));
     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=64;const texture=new THREE.CanvasTexture(canvas),label=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));label.scale.set(3.3,.82,1);label.position.y=2.5;root.add(label);
     return {root,model,label,canvas,texture,state:null,phase:hash(id)%10};
   }

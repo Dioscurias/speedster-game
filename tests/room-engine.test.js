@@ -11,6 +11,14 @@ test('joining a room returns the other live speedsters',()=>{
   assert.deepEqual(result.players.map(player=>player.id),['a']);
   assert.equal(result.online,2);
 });
+test('every active player receives a different stable suit color',()=>{
+  const room=createRoomEngine();
+  const first=room.update('a',state(0),1_000).self.colorIndex;
+  const second=room.update('b',state(20),1_010).self.colorIndex;
+  const repeated=room.update('a',state(1),1_020).self.colorIndex;
+  assert.notEqual(first,second);
+  assert.equal(first,repeated);
+});
 
 test('a fast head-on crash damages both players only once per cooldown',()=>{
   const room=createRoomEngine();
