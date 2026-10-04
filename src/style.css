@@ -54,4 +54,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}body{min-height
 .multiplayer-hud{padding:0;background:transparent!important;color:#fff;text-shadow:0 2px 4px #000}.multiplayer-hud>span:first-child{font-size:9px;margin-bottom:7px}.multiplayer-hud .health-value-row{display:block}.multiplayer-hud #health-value{display:flex;align-items:baseline;gap:6px;font-family:'Barlow Condensed',sans-serif;font-size:80px;font-style:italic;font-weight:600;line-height:.82;letter-spacing:-2px}.multiplayer-hud #health-value span{font-family:'Space Grotesk',sans-serif;font-size:11px;font-style:normal;font-weight:500;letter-spacing:0}.multiplayer-hud .health-caption{display:block;margin-top:8px;font-size:8px;letter-spacing:1px}.multiplayer-hud .health-track{display:block;width:160px;height:14px;margin-top:7px;background:transparent;overflow:hidden}.multiplayer-hud .health-track i{display:block;height:100%;background:repeating-linear-gradient(90deg,#d9b565 0 6px,transparent 6px 9px)}
 @media(max-width:760px){.multiplayer-hud{bottom:86px}.multiplayer-hud #health-value{font-size:58px}.multiplayer-hud .health-track{width:125px}.scene-bottom{bottom:172px}}
 body:not(.running) .multiplayer-hud,body:not(.running) .mission-panel,body:not(.running) .scene-bottom{opacity:0;pointer-events:none}
-.map-hud #minimap{display:block;aspect-ratio:1}
+/* A single transparent map layer keeps the game visible through the HUD. */
+.map-hud{width:188px;height:188px;background:transparent;border:1px solid #ffffff60;backdrop-filter:none;box-shadow:none}
+.map-hud #minimap{display:block;width:100%;height:100%;aspect-ratio:1;opacity:1}
+.compass-hud{right:224px}
+@media(max-width:760px){.map-hud{width:136px;height:136px}.map-hud #minimap{width:100%;height:100%}.scene-top{top:160px}.view-buttons{top:202px}.compass-hud{top:140px;right:auto}}
+#city-overview{background:#182129;border:0;outline:1px solid #ffffff24;aspect-ratio:9/10}
+#map-place:empty{display:none}
+@media(max-width:760px){.scene-bottom{bottom:200px}}

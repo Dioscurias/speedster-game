@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nearestRoad,unproject} from './austin.js';
 import {createCityDetails} from './city-details.js';
 import {nearestSegment} from './game.js';
-import {minimapMetrics} from './minimap.js';
+import {createMinimapRenderer} from './minimap.js';
 const mod=(n,m)=>((n%m)+m)%m;
 function geo(positions,uv=[]){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv.length?uv:new Array(positions.length/3*2).fill(0),2));g.computeVertexNormals();return g;}
 export function ribbon(a,b,width,y){const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),nx=-dz/length*width/2,nz=dx/length*width/2;const p=[[a[0]+nx,y,a[1]+nz],[a[0]-nx,y,a[1]-nz],[b[0]-nx,y,b[1]-nz],[b[0]+nx,y,b[1]+nz]];return geo([...p[0],...p[2],...p[1],...p[0],...p[3],...p[2]],[0,0,width/4,length/4,width/4,0,0,0,0,length/4,width/4,length/4]);}
@@ -68,11 +68,6 @@ export async function createCity(scene,map,carModel){
   for(const car of traffic){const {a,b,length}=car.route,phase=mod(world.worldTime*8+car.offset,length*2),d=phase<length?phase:2*length-phase,sign=phase<length?1:-1,ux=(b[0]-a[0])/length,uz=(b[1]-a[1])/length;car.x=a[0]+ux*d-uz*2.6;car.z=a[1]+uz*d+ux*2.6;car.vx=ux*8*sign;car.vz=uz*8*sign;car.model.position.set(car.x,.07,car.z);car.model.rotation.y=Math.atan2(car.vx,car.vz);car.model.visible=Math.hypot(car.x-world.x,car.z-world.z)<500;}
   for(const p of pickups){p.model.visible=p.available<=world.elapsed&&Math.hypot(p.x-world.x,p.z-world.z)<500;p.model.rotation.y=world.worldTime*1.4;}
  }
- function drawMap(canvas,world,viewYaw){const cssSize=canvas.getBoundingClientRect().width||164,metrics=minimapMetrics(cssSize,globalThis.devicePixelRatio),ctx=canvas.getContext('2d'),w=metrics.cssSize,h=metrics.cssSize,scale=metrics.worldScale;if(canvas.width!==metrics.backingSize||canvas.height!==metrics.backingSize){canvas.width=metrics.backingSize;canvas.height=metrics.backingSize;}ctx.setTransform(metrics.pixelRatio,0,0,metrics.pixelRatio,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#0c1114a8';ctx.fillRect(0,0,w,h);const project=p=>[w/2+(p[0]-world.x)*scale,h/2+(p[1]-world.z)*scale];
-  for(const a of map.areas){ctx.fillStyle=a.kind==='water'?'#31586988':'#273b3288';ctx.beginPath();a.polygon.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(...q):ctx.moveTo(...q);});ctx.fill();}
-  ctx.fillStyle='#41474a88';for(const b of map.buildings){const p=b.polygon[0];if(Math.abs(p[0]-world.x)>550||Math.abs(p[1]-world.z)>350)continue;ctx.beginPath();b.polygon.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(...q):ctx.moveTo(...q);});ctx.fill();}
-  ctx.strokeStyle='#ded8c899';for(const r of map.roads){if(r.width<5)continue;ctx.lineWidth=Math.max(1,r.width*scale*.65);ctx.beginPath();r.points.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(...q):ctx.moveTo(...q);});ctx.stroke();}
-  ctx.save();ctx.translate(w/2,h/2);ctx.rotate(viewYaw);ctx.fillStyle='#d8ad5c26';ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,38,-Math.PI/2-.5,-Math.PI/2+.5);ctx.fill();ctx.rotate(world.heading-viewYaw);ctx.shadowColor='#f0c66d';ctx.shadowBlur=9;ctx.fillStyle='#f6ce72';ctx.strokeStyle='#15191c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-metrics.playerSize);ctx.lineTo(metrics.playerSize*.68,metrics.playerSize*.8);ctx.lineTo(0,metrics.playerSize*.42);ctx.lineTo(-metrics.playerSize*.68,metrics.playerSize*.8);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();ctx.fillStyle='#eee9dc';ctx.font='9px sans-serif';ctx.fillText('N ↑',8,13);ctx.fillText('100 m',w-37,h-7);ctx.fillRect(w-38,h-15,19,1);
- }
+ const drawMap=createMinimapRenderer(map);
  return {root,traffic,pickups,detailStats:details.counts,update,drawMap,streetAt:(x,z)=>nearestRoad(x,z,map.lines)?.road.name||'Downtown Austin',coordinates:(x,z)=>unproject(x,z,map.origin)};
 }
