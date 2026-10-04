@@ -33,36 +33,36 @@ async function init(){try{
  world=createWorld(map.spawn);world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;
  lightning=new SpeedLightning(scene,animator);
  multiplayer=new Multiplayer({scene,template:runner,getWorld:()=>world,onState:handleMultiplayerState});
- loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Explore Austin';
+ loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Play';
  window.__velocity={getState:()=>({...world,viewYaw:view.yaw,viewPitch:view.pitch}),getAnimation:()=>animator.snapshot(),getEffects:()=>({vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.blocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
 }catch(error){console.error(error);$('start-label').textContent='Reload to retry';$('start').disabled=false;$('start').onclick=()=>location.reload();showToast('An asset could not load. Reload to try again.',30000);}}
 function keysClear(){Object.keys(keys).forEach(k=>keys[k]=false);jumpQueued=false;}
 function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-austin'));if(d&&Number.isFinite(d.distance)&&Number.isFinite(d.topSpeed)&&Number.isFinite(d.pickups))return d;}catch{}return {distance:0,topSpeed:0,pickups:0};}
 function saveRecords(){const r=readRecords();r.distance=Math.max(r.distance,world.distance);r.topSpeed=Math.max(r.topSpeed,world.topSpeed);r.pickups=Math.max(r.pickups,world.collected);try{localStorage.setItem('velocity-austin',JSON.stringify(r));}catch{}}
-function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');showToast('AUSTIN IS YOURS · MULTIPLAYER ROOM CONNECTING');}
+function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
 function pause(){if(world.status==='running'){world.status='paused';saveRecords();$('result').classList.remove('hidden');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game');}else if(world.status==='paused'){world.status='running';$('result').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}keysClear();}
 function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;}
 function handleMultiplayerState(data){
- const health=data.self.health;$('health-value').textContent=`${health}%`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='ONLINE';
- if(health<lastHealth&&health>0)showToast(`CRASH · ${lastHealth-health} DAMAGE`,1100);
+ const health=data.self.health;$('health-value').textContent=`${health}%`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
+ if(health<lastHealth&&health>0)showToast(`${lastHealth-health} damage`,1100);
  if(health<=0&&!dead){dead=true;world.status='dead';keysClear();$('death').classList.remove('hidden');$('result').classList.add('hidden');}
- if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('RESPAWNED · GET BACK IN THE FIGHT');}
+ if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
  if(dead)$('respawn-count').textContent=String(Math.max(0,Math.ceil((data.self.respawnAt-data.serverTime)/1000)));
  lastHealth=health;
 }
 function contacts(){for(const car of city.traffic){const dx=world.x-car.x,dz=world.z-car.z,heading=Math.atan2(car.vx,car.vz),lateral=dx*Math.cos(heading)-dz*Math.sin(heading),longitudinal=dx*Math.sin(heading)+dz*Math.cos(heading);if(Math.abs(lateral)<1.25&&Math.abs(longitudinal)<2.6&&world.y<1.3&&hitTraffic(world,car))showToast('IMPACT · momentum absorbed',900);}
  for(const p of city.pickups)if(p.available<=world.elapsed&&Math.hypot(p.x-world.x,p.z-world.z)<1.7&&world.y<2){p.available=world.elapsed+25;collectEnergy(world);showToast('ϟ +25 SPEED FORCE',700);}}
 function updateHUD(){
- $('speed').textContent=String(Math.round(world.speed*3.6)).padStart(3,'0');$('speed-mode').textContent=world.status==='ready'?'READY TO EXPLORE':world.phasing?'PHASING':world.wallRunning?'WALL RUN':!world.grounded?'AIRBORNE':world.slowing?'TIME DILATION':world.boosting?'SPEED FORCE ACTIVE':world.speed<.3?'GROUNDED':'MOMENTUM ACTIVE';
+ $('speed').textContent=String(Math.round(world.speed*3.6)).padStart(3,'0');$('speed-mode').textContent=world.status==='ready'?'Ready':world.phasing?'Phasing':world.wallRunning?'Wall run':!world.grounded?'Airborne':world.slowing?'Slow time':world.boosting?'Boost':world.speed<.3?'Stopped':'Running';
  $('peak-speed').innerHTML=`${Math.round(world.topSpeed*3.6)}<span> KM/H</span>`;$('energy-label').innerHTML=`${Math.round(world.energy)}<span>%</span>`;$('energy-fill').style.width=`${world.energy}%`;
  $('distance').innerHTML=world.distance>=1000?`${(world.distance/1000).toFixed(2)} <small>km</small>`:`${Math.floor(world.distance)} <small>m</small>`;$('collected').textContent=String(world.collected).padStart(2,'0');
  document.querySelectorAll('#speed-bars i').forEach((b,i)=>b.classList.toggle('on',i<world.speed/BOOST_SPEED*20));document.body.classList.toggle('boosting',world.boosting);document.body.classList.toggle('slowing',world.slowing);
  const heading=((view.yaw*180/Math.PI)%360+360)%360,compass=['N','NE','E','SE','S','SW','W','NW'][Math.round(heading/45)%8];$('compass').textContent=`${compass} · ${Math.round(heading)}°`;
  const ll=city.coordinates(world.x,world.z);$('coords').textContent=`${ll.lat.toFixed(4)}° N / ${Math.abs(ll.lon).toFixed(4)}° W`;
  const edge=Math.min(world.x-map.bounds.minX,map.bounds.maxX-world.x,world.z-map.bounds.minZ,map.bounds.maxZ-world.z);
- $('scene-state').textContent=edge<25?'DOWNTOWN MAP BOUNDARY':city.streetAt(world.x,world.z).toUpperCase();$('street-name').textContent=city.streetAt(world.x,world.z);$('impact').style.opacity=world.impact>.25?String(world.impact):'0';city.drawMap($('minimap'),world,view.yaw);
+ $('scene-state').textContent=edge<25?'Map boundary':city.streetAt(world.x,world.z);$('street-name').textContent=city.streetAt(world.x,world.z);$('impact').style.opacity=world.impact>.25?String(world.impact):'0';city.drawMap($('minimap'),world,view.yaw);
  $('braking').textContent=`${Math.round(world.speed*world.speed/(2*PHYSICS.braking*world.grip))} m`;
- if(multiplayer){$('online-count').textContent=String(multiplayer.online);$('network-state').textContent=multiplayer.connected?'ONLINE':'RECONNECTING';}
+ if(multiplayer){$('online-count').textContent=String(multiplayer.online);$('network-state').textContent=multiplayer.connected?'Connected':'Reconnecting';}
 }
 let shownHeading=0;
 function updateScene(dt){
