@@ -43,7 +43,7 @@ function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);wo
 function pause(){if(world.status==='running'){world.status='paused';saveRecords();$('result').classList.remove('hidden');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game');}else if(world.status==='paused'){world.status='running';$('result').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}keysClear();}
 function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;}
 function handleMultiplayerState(data){
- const health=data.self.health;$('health-value').textContent=`${health}%`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
+ const health=data.self.health;$('health-value').innerHTML=`${health}<span>%</span>`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
  if(health<lastHealth&&health>0)showToast(`${lastHealth-health} damage`,1100);
  if(health<=0&&!dead){dead=true;world.status='dead';keysClear();$('death').classList.remove('hidden');$('result').classList.add('hidden');}
  if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
