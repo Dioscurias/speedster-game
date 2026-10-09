@@ -4,7 +4,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1160}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto(process.env.TEST_URL||'http://localhost:5173');await page.waitForFunction(()=>window.__velocity?.assetsLoaded,null,{timeout:90000});await page.waitForTimeout(700);
+ await page.goto((process.env.TEST_URL||'http://localhost:5173')+'/?embed=1');await page.waitForFunction(()=>window.__velocity?.assetsLoaded,null,{timeout:90000});await page.waitForTimeout(700);
  const animation=()=>page.evaluate(()=>window.__velocity.getAnimation());
  const state=()=>page.evaluate(()=>window.__velocity.getState());const hold=async(key,ms)=>{await page.keyboard.down(key);await page.waitForTimeout(ms);await page.keyboard.up(key);};
  assert.match(await page.evaluate(()=>window.__velocity.mapName),/Austin/);assert.equal(await page.evaluate(()=>window.__velocity.model),'Quaternius Superhero');

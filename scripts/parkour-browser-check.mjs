@@ -4,7 +4,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- await page.goto((process.env.TEST_URL||'http://localhost:5173')+'/?map=parkour');
+ await page.goto((process.env.TEST_URL||'http://localhost:5173')+'/?embed=1&map=parkour');
  await page.waitForFunction(()=>document.querySelector('#play')?.textContent==='Begin journey');
  await page.click('#play');
  await page.keyboard.down('Space');
