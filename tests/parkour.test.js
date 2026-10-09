@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createWorld,stepWorld,PARKOUR} from '../src/game.js';
+import {createCourse} from '../src/parkour-course.js';
+test('parkour speed is capped independently of Austin',()=>{const w=createWorld();w.status='running';for(let i=0;i<360;i++)stepWorld(w,{forward:true},1/120,undefined,PARKOUR);assert.ok(w.speed<=10.01);assert.ok(w.speed>9);});
+test('every course gap is reachable with a held jump',()=>{const c=createCourse();for(let i=1;i<c.platforms.length;i++){const a=c.platforms[i-1],b=c.platforms[i];const w=createWorld({x:0,z:a.z-a.depth/2+1});Object.assign(w,{status:'running',y:a.top,vz:-10,speed:10});let landed=false;for(let j=0;j<220;j++){stepWorld(w,{forward:true,jump:j===0,jumpHeld:true},1/120,c.collider,PARKOUR);if(j>5&&w.grounded){landed=Math.abs(w.y-b.top)<.01&&Math.abs(w.z-b.z)<b.depth/2;break;}}assert.ok(landed,`gap ${i}`);}});
+test('fall respawns and finish requires ordered checkpoints',()=>{const c=createCourse(),w=createWorld(c.spawn);w.status='running';Object.assign(w,{z:c.finish.z,y:c.finish.top});assert.equal(c.update(w).complete,false);for(const p of c.checkpoints){Object.assign(w,{x:0,z:p.z,y:p.top,grounded:true});c.update(w);}w.y=-20;assert.equal(c.update(w).respawned,true);assert.equal(w.vy,0);Object.assign(w,{x:0,z:c.finish.z,y:c.finish.top,grounded:true});assert.equal(c.update(w).complete,true);});

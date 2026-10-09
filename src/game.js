@@ -15,7 +15,7 @@ export function createCollider(objects=[],bounds=null){
  return {surface:(x,z,y)=>(cells.get(`${Math.floor(x/size)},${Math.floor(z/size)}`)||[]).reduce((top,o)=>Number.isFinite(o.height)&&o.height<=y+.05&&insidePolygon(x,z,o.polygon)?Math.max(top,o.height):top,0),contacts,blocked:(x,z,y=0)=>contacts(x,z,y).length>0};
 }
 const empty=createCollider();
-export function stepWorld(s,input,dt,collider=empty){
+export function stepWorld(s,input,dt,collider=empty,physics=PHYSICS){
  if(s.status!=='running'||dt<=0)return;
  s.elapsed+=dt;s.cooldown=Math.max(0,s.cooldown-dt);s.impact=Math.max(0,s.impact-dt*2);
  const right=Number(!!input.right)-Number(!!input.left),forward=Number(!!input.forward)-Number(!!input.backward),moving=!!(right||forward),yaw=input.viewYaw||0;
@@ -23,16 +23,16 @@ export function stepWorld(s,input,dt,collider=empty){
  s.energy=Math.max(0,Math.min(100,s.energy+dt*(s.boosting?-18:s.slowing?-12:16)));
  const timeScale=s.slowing?.35:1,total=dt*timeScale;s.worldTime+=total;
  s.wallCooldown=Math.max(0,s.wallCooldown-total);s.landingImpact=Math.max(0,s.landingImpact-total*3);
- s.coyote=s.grounded?PHYSICS.coyoteTime:Math.max(0,s.coyote-total);s.jumpBuffer=input.jump?PHYSICS.jumpBuffer:Math.max(0,s.jumpBuffer-total);
+ s.coyote=s.grounded?physics.coyoteTime:Math.max(0,s.coyote-total);s.jumpBuffer=input.jump?physics.jumpBuffer:Math.max(0,s.jumpBuffer-total);
  if(!collider.blocked(s.x,s.z,s.y))s.phaseSafe={x:s.x,z:s.z,y:s.y,grounded:s.grounded};
  if(s.phasing&&!input.phase&&collider.blocked(s.x,s.z,s.y)&&s.phaseSafe){Object.assign(s,s.phaseSafe);s.vx=s.vz=s.vy=0;}
  s.phasing=!!input.phase;
  if(s.phasing){s.wallRunning=false;s.wall=null;}
  if(input.jump&&s.wallRunning){const w=s.wall;s.vx=w.nx*14;s.vz=w.nz*14;s.vy=8;s.jumpCut=false;s.wallRunning=false;s.wall=null;s.wallCooldown=.35;s.jumpBuffer=0;s.coyote=0;}
 
- if(s.jumpBuffer>0&&(s.grounded||s.coyote>0)&&!s.wallRunning){s.vy=PHYSICS.jumpSpeed;s.jumpCut=false;s.grounded=false;s.jumpBuffer=0;s.coyote=0;}
- if(!s.grounded&&!s.wallRunning&&!s.jumpCut&&input.jumpHeld===false&&s.vy>0){s.vy=Math.min(s.vy,PHYSICS.jumpCutSpeed);s.jumpCut=true;}
- const max=s.cooldown>.8?20:s.boosting?BOOST_SPEED:RUN_SPEED;
+ if(s.jumpBuffer>0&&(s.grounded||s.coyote>0)&&!s.wallRunning){s.vy=physics.jumpSpeed;s.jumpCut=false;s.grounded=false;s.jumpBuffer=0;s.coyote=0;}
+ if(!s.grounded&&!s.wallRunning&&!s.jumpCut&&input.jumpHeld===false&&s.vy>0){s.vy=Math.min(s.vy,physics.jumpCutSpeed);s.jumpCut=true;}
+ const max=s.cooldown>.8?20:s.boosting?(physics.boostSpeed??BOOST_SPEED):(physics.runSpeed??RUN_SPEED);
  let dx=right*Math.cos(yaw)+forward*Math.sin(yaw),dz=right*Math.sin(yaw)-forward*Math.cos(yaw),len=Math.hypot(dx,dz);if(len){dx/=len;dz/=len;}
  const count=Math.max(1,Math.ceil(total/(1/120)),Math.ceil(Math.hypot(s.vx,s.vz)*total/.2)),h=total/count;
  for(let i=0;i<count;i++){
@@ -54,21 +54,21 @@ export function stepWorld(s,input,dt,collider=empty){
   const terrain=collider.terrain?.(s.x,s.z)??{height:0,grip:1,kind:'asphalt'};
   s.surface=terrain.kind;s.grip=terrain.grip;
   const floor=s.phasing?terrain.height:(collider.surface?.(s.x,s.z,s.y)??terrain.height);
-  if(s.grounded){if(s.y>floor+.05)s.grounded=false;else if(floor-s.y<=PHYSICS.stepHeight)s.y=floor;}
+  if(s.grounded){if(s.y>floor+.05)s.grounded=false;else if(floor-s.y<=physics.stepHeight)s.y=floor;}
   const speed=Math.hypot(s.vx,s.vz);
   if(s.grounded){
    if(moving){
     const target=Math.atan2(dx,-dz),current=speed>.05?Math.atan2(s.vx,-s.vz):target;
     const angle=Math.atan2(Math.sin(target-current),Math.cos(target-current));
-    const turn=Math.max(-PHYSICS.turnRate*terrain.grip*h,Math.min(PHYSICS.turnRate*terrain.grip*h,angle));
+    const turn=Math.max(-physics.turnRate*terrain.grip*h,Math.min(physics.turnRate*terrain.grip*h,angle));
     const reversing=Math.abs(angle)>Math.PI*.65;
-    const acceleration=(s.boosting?PHYSICS.boostAcceleration:PHYSICS.acceleration)*terrain.grip;
-    const next=reversing?Math.max(0,speed-PHYSICS.reverseBraking*h):Math.max(0,speed+Math.sign(max-speed)*Math.min(Math.abs(max-speed),(speed>max?PHYSICS.braking*terrain.grip:acceleration)*h));
+    const acceleration=(s.boosting?physics.boostAcceleration:physics.acceleration)*terrain.grip;
+    const next=reversing?Math.max(0,speed-physics.reverseBraking*h):Math.max(0,speed+Math.sign(max-speed)*Math.min(Math.abs(max-speed),(speed>max?physics.braking*terrain.grip:acceleration)*h));
     s.vx=Math.sin(current+turn)*next;s.vz=-Math.cos(current+turn)*next;
-   }else{const next=Math.max(0,speed-PHYSICS.braking*terrain.grip*h),f=speed?next/speed:0;s.vx*=f;s.vz*=f;}
+   }else{const next=Math.max(0,speed-physics.braking*terrain.grip*h),f=speed?next/speed:0;s.vx*=f;s.vz*=f;}
   }else{
-   if(moving&&speed>5){const current=Math.atan2(s.vx,-s.vz),target=Math.atan2(dx,-dz),angle=Math.atan2(Math.sin(target-current),Math.cos(target-current)),turn=Math.max(-PHYSICS.airTurnRate*h,Math.min(PHYSICS.airTurnRate*h,angle));s.vx=Math.sin(current+turn)*speed;s.vz=-Math.cos(current+turn)*speed;}
-   const ax=dx*max-s.vx,az=dz*max-s.vz,delta=Math.hypot(ax,az),limit=moving?PHYSICS.airAcceleration*h:0;
+   if(moving&&speed>5){const current=Math.atan2(s.vx,-s.vz),target=Math.atan2(dx,-dz),angle=Math.atan2(Math.sin(target-current),Math.cos(target-current)),turn=Math.max(-physics.airTurnRate*h,Math.min(physics.airTurnRate*h,angle));s.vx=Math.sin(current+turn)*speed;s.vz=-Math.cos(current+turn)*speed;}
+   const ax=dx*max-s.vx,az=dz*max-s.vz,delta=Math.hypot(ax,az),limit=moving?physics.airAcceleration*h:0;
    if(delta>0){const f=Math.min(1,limit/delta);s.vx+=ax*f;s.vz+=az*f;}
    s.vx*=Math.exp(-.025*h);s.vz*=Math.exp(-.025*h);
   }
@@ -83,8 +83,8 @@ export function stepWorld(s,input,dt,collider=empty){
    }else if(normalSpeed<0){s.vx-=normalSpeed*contact.nx;s.vz-=normalSpeed*contact.nz;if(normalSpeed < -8)s.impact=Math.min(1,-normalSpeed/50);}
   }
   s.distance+=Math.hypot(s.x-oldX,s.z-oldZ);
-  if(s.grounded){const ground=s.phasing?(collider.terrain?.(s.x,s.z)?.height??0):(collider.surface?.(s.x,s.z,s.y)??0);if(ground-s.y<=PHYSICS.stepHeight&&s.y-ground<=.05)s.y=ground;else if(s.y>ground+.05)s.grounded=false;}
-  if(!s.grounded&&!s.wallRunning){const previousY=s.y;const gravity=GRAVITY*(s.vy<0?PHYSICS.fallGravity:1);s.y+=s.vy*h-.5*gravity*h*h;s.vy-=gravity*h;const support=s.phasing?(collider.terrain?.(s.x,s.z)?.height??0):(collider.surface?.(s.x,s.z,previousY)??0);if(s.y<=support){s.landingImpact=Math.min(1,Math.max(0,-s.vy-4)/14);s.y=support;s.vy=0;s.grounded=true;}}
+  if(s.grounded){const ground=s.phasing?(collider.terrain?.(s.x,s.z)?.height??0):(collider.surface?.(s.x,s.z,s.y)??0);if(ground-s.y<=physics.stepHeight&&s.y-ground<=.05)s.y=ground;else if(s.y>ground+.05)s.grounded=false;}
+  if(!s.grounded&&!s.wallRunning){const previousY=s.y;const gravity=GRAVITY*(s.vy<0?physics.fallGravity:1);s.y+=s.vy*h-.5*gravity*h*h;s.vy-=gravity*h;const support=s.phasing?(collider.terrain?.(s.x,s.z)?.height??0):(collider.surface?.(s.x,s.z,previousY)??0);if(s.y<=support){s.landingImpact=Math.min(1,Math.max(0,-s.vy-4)/14);s.y=support;s.vy=0;s.grounded=true;}}
  }
  s.speed=s.wallRunning?Math.hypot(s.vx,s.vz,s.vy):Math.hypot(s.vx,s.vz);s.topSpeed=Math.max(s.topSpeed,s.speed);if(!s.wallRunning&&s.speed>.2)s.heading=Math.atan2(s.vx,-s.vz);
 }
@@ -92,3 +92,5 @@ export function hitTraffic(s,car={x:s.x+1,z:s.z,vx:0,vz:0}){if(s.status!=='runni
 export function collectEnergy(s){s.energy=Math.min(100,s.energy+25);s.collected++;}
 export function cameraClearance(x,z,offsetX,offsetZ,collider=empty,y=1.5){const steps=Math.max(1,Math.ceil(Math.hypot(offsetX,offsetZ)/.2));for(let i=1;i<=steps;i++)if(collider.blocked(x+offsetX*i/steps,z+offsetZ*i/steps,y))return (i-1)/steps;return 1;}
 export function updateView(view,input,dt){return {yaw:view.yaw+((input.right?1:0)-(input.left?1:0))*1.65*dt,pitch:Math.max(.08,Math.min(1.15,view.pitch+((input.up?1:0)-(input.down?1:0))*.75*dt))};}
+
+export const PARKOUR=Object.freeze({...PHYSICS,runSpeed:10,boostSpeed:10,acceleration:34,braking:90,reverseBraking:110,airAcceleration:14,airTurnRate:2.4,fallGravity:1.65,coyoteTime:.11});

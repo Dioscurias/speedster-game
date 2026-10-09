@@ -35,6 +35,8 @@ export function updateAnimation(s,w,input,dt){
  s.crouch=smooth(s.crouch,s.landing>0?Math.sin(Math.PI*(1-s.landing/.3))*s.landingStrength:s.phase==='launch'?.12:0,30,dt);
  // Initial contact should react within the first rendered frame.
  if(!s.wasGrounded&&w.grounded)s.crouch=Math.max(s.crouch,.22);
+ if(s.takeoff>0&&.18-s.takeoff<.035)s.crouch=Math.max(s.crouch,.35);
+ if(!onSurface&&Math.abs(w.vy)<.65)s.tuck=Math.max(s.tuck,.7);
  s.flinch=smooth(s.flinch,s.stagger>0?s.stagger/.25:0,25,dt);
  s.takeoff=Math.max(0,s.takeoff-dt);s.landing=Math.max(0,s.landing-dt);s.stagger=Math.max(0,s.stagger-dt);
  s.wasGrounded=w.grounded;s.lastSpeed=w.speed;s.lastVx=w.vx;s.lastVz=w.vz;s.lastVy=w.vy;s.lastImpact=w.impact;s.worldTime=w.worldTime;

@@ -1,3 +1,4 @@
+import {JumpFX} from './jump-fx.js';
 import './style.css';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -14,6 +15,7 @@ import {styleSuperhero,speedsterColorForIndex} from './superhero.js';
 import {Multiplayer} from './multiplayer.js';
 
 const $=id=>document.getElementById(id),keys={};
+let jumpFX;const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let world=createWorld(),view={yaw:0,pitch:.34},map,city,loaded=false,quality=true,runner,animator,lightning,multiplayer,jumpQueued=false,toastUntil=0,dead=false,lastHealth=100;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b9d4e7');scene.fog=new THREE.FogExp2('#b9d4e7',.00165);
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;$('scene').appendChild(renderer.domElement);
@@ -30,8 +32,8 @@ async function init(){try{
  styleSuperhero(human.scene,{normalMap:suitNormal});
  runner=fitted(human.scene,1.86);scene.add(runner);animator=new CharacterAnimation(human.scene,human.animations,world);
  const car=fitted(vehicle.scene,1.3);city=await createCity(scene,map,car);
- world=createWorld(map.spawn);world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;
- lightning=new SpeedLightning(scene,animator);
+ world=createWorld(map.spawn);world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;
+ lightning=new SpeedLightning(scene,animator);jumpFX=new JumpFX(scene,runner,(x,z,y)=>map.collider.surface(x,z,y));
  multiplayer=new Multiplayer({scene,template:runner,getWorld:()=>world,onState:handleMultiplayerState});
  loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Play';
  window.__velocity={getState:()=>({...world,viewYaw:view.yaw,viewPitch:view.pitch}),getAnimation:()=>animator.snapshot(),getEffects:()=>({vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.blocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
@@ -39,14 +41,14 @@ async function init(){try{
 function keysClear(){Object.keys(keys).forEach(k=>keys[k]=false);jumpQueued=false;}
 function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-austin'));if(d&&Number.isFinite(d.distance)&&Number.isFinite(d.topSpeed)&&Number.isFinite(d.pickups))return d;}catch{}return {distance:0,topSpeed:0,pickups:0};}
 function saveRecords(){const r=readRecords();r.distance=Math.max(r.distance,world.distance);r.topSpeed=Math.max(r.topSpeed,world.topSpeed);r.pickups=Math.max(r.pickups,world.collected);try{localStorage.setItem('velocity-austin',JSON.stringify(r));}catch{}}
-function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
+function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
 function pause(){if(world.status==='running'){world.status='paused';saveRecords();$('result').classList.remove('hidden');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game');}else if(world.status==='paused'){world.status='running';$('result').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}keysClear();}
 function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;}
 function handleMultiplayerState(data){
  const health=data.self.health;$('health-value').innerHTML=`${health}<span>%</span>`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
  if(health<lastHealth&&health>0)showToast(`${lastHealth-health} damage`,1100);
  if(health<=0&&!dead){dead=true;world.status='dead';keysClear();$('death').classList.remove('hidden');$('result').classList.add('hidden');}
- if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
+ if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
  if(dead)$('respawn-count').textContent=String(Math.max(0,Math.ceil((data.self.respawnAt-data.serverTime)/1000)));
  lastHealth=health;
 }
@@ -74,19 +76,20 @@ function updateScene(dt){
  const diff=Math.atan2(Math.sin(world.heading-shownHeading),Math.cos(world.heading-shownHeading));
  if(world.status!=='paused')shownHeading+=diff*(1-Math.exp(-animationDt*32));
  const vibration=phaseVibration(world.worldTime,world.phasing);
- runner.position.set(vibration.x,world.y-pose.crouch*.14+vibration.y,vibration.z);
+ runner.position.set(vibration.x,world.y-pose.crouch*.04+vibration.y,vibration.z);
  const rotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(-pose.lean*.18,-shownHeading,pose.bank*.2,'YXZ'));
  if(world.wallRunning){const {nx,nz}=world.wall;rotation.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(nz,0,-nx),new THREE.Vector3(nx,0,nz),new THREE.Vector3(0,-1,0)));}
  if(world.status!=='paused')runner.quaternion.slerp(rotation,1-Math.exp(-animationDt*26));
  runner.traverse(o=>{if(o.isMesh){o.material.transparent=world.phasing;o.material.opacity=world.phasing?.48+.12*Math.sin(world.worldTime*137):1;o.material.depthWrite=!world.phasing;}});
  $('phase').classList.toggle('active',world.phasing);$('phase').setAttribute('aria-pressed',String(world.phasing));
- lightning.update(world,runner);
+ lightning.update(world,runner);jumpFX.update(world,animationDt,reducedMotion);
  multiplayer?.update(dt);
  const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=world.boosting?10:7,horizontal=Math.cos(pitch)*distance;
  const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,world.y+1.25+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);
+ const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
  const clear=world.phasing?1:cameraClearance(world.x,world.z,target.x,target.z,map.collider,world.y+1.4);target.x*=clear;target.z*=clear;
  camera.position.lerp(target,1-Math.exp(-dt*10));const safe=world.phasing?1:cameraClearance(world.x,world.z,camera.position.x,camera.position.z,map.collider,camera.position.y);camera.position.x*=safe;camera.position.z*=safe;
- camera.lookAt(Math.sin(yaw)*1.7,world.y+1.35,-Math.cos(yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,world.boosting?76:58,Math.min(1,dt*5));camera.updateProjectionMatrix();
+ camera.lookAt(Math.sin(yaw)*1.7,world.y+1.35,-Math.cos(yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,(world.boosting?76:58)+jumpCamera.fov,Math.min(1,dt*5));camera.updateProjectionMatrix();
 }
 $('speed-bars').innerHTML='<i></i>'.repeat(20);$('start').onclick=()=>{if(loaded)reset();};$('pause').onclick=pause;$('resume').onclick=pause;$('restart').onclick=reset;
 window.addEventListener('keydown',event=>{if($('info-dialog').open)return;const k=event.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))event.preventDefault();if(k==='m'&&!event.repeat&&loaded){showMap();return;}if(k==='escape'){if(!event.repeat)pause();return;}if(k==='enter'&&world.status==='ready'&&loaded){reset();return;}if(k===' '&&!event.repeat)jumpQueued=true;keys[k]=true;});
