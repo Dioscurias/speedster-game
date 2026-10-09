@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createAbilities,findTeleport,ABILITY} from '../src/parkour-abilities.js';
+import {createCourse} from '../src/parkour-course.js';
+import {createWorld} from '../src/game.js';
+test('teleports refill individually on the rolling ten-second boundary',()=>{const a=createAbilities();assert.ok(a.spendTeleport(0));assert.ok(a.spendTeleport(2));assert.ok(a.spendTeleport(4));assert.equal(a.spendTeleport(9.99),false);assert.equal(a.teleports(10).available,1);assert.ok(a.spendTeleport(10));assert.equal(a.teleports(11).available,0);assert.equal(a.teleports(12).available,1);});
+test('teleport rejects gaps, map edges, and blocking geometry',()=>{const c=createCourse(),w=createWorld(c.spawn);const safe=findTeleport(w,{x:0,z:-1},c);assert.ok(safe);assert.equal(safe.z,w.z-ABILITY.teleportDistance);assert.equal(findTeleport(w,{x:1,z:0},c),null);w.z=-2;assert.equal(findTeleport(w,{x:0,z:-1},c),null);});
+test('blast charge, release, cooldown, and cancelled aim',()=>{const a=createAbilities();assert.ok(a.beginAim(0));assert.equal(a.release(.1),null);a.beginAim(1);const blast=a.release(1+ABILITY.chargeTime);assert.equal(blast.power,1);assert.equal(a.beginAim(2.3),false);assert.ok(a.beginAim(5));a.cancelAim();assert.equal(a.release(7),null);});
+test('moving platform carries standing player and detaches during crumble',()=>{const c=createCourse(),p=c.platforms[5],w=createWorld();Object.assign(w,{x:p.x,z:p.z,y:p.top,grounded:true,status:'running'});c.advance(.5,w);assert.ok(Math.abs(w.x)>0.01);assert.equal(w.y,p.top);const falling=c.platforms[14];Object.assign(w,{x:falling.x,z:falling.z,y:falling.top,grounded:true});c.advance(10,w);assert.equal(falling.active,false);assert.equal(w.grounded,false);});
+test('motion is deterministic and freezes at zero speed',()=>{const a=createCourse(),b=createCourse();a.advance(3);b.advance(1);b.advance(2);assert.deepEqual(a.platforms,b.platforms);a.motionSpeed=0;const before=structuredClone(a.platforms);a.advance(5);assert.deepEqual(a.platforms,before);});
+
+test('refilling a teleport does not move another pip to a different slot',()=>{const a=createAbilities();a.spendTeleport(0);a.spendTeleport(2);a.spendTeleport(4);assert.deepEqual(a.teleports(10).pips,[1,.8,.6]);a.spendTeleport(10);assert.deepEqual(a.teleports(10).pips,[0,.8,.6]);});
+test('blink checks the intervening path, not only the destination',()=>{const c=createCourse(),w=createWorld(c.spawn);const contacts=c.collider.contacts;c.collider.contacts=(x,z,y,r)=>Math.abs(z)<.2?[{depth:1}]:contacts(x,z,y,r);assert.equal(findTeleport(w,{x:0,z:-1},c),null);});
+test('rotating support carries a player at an offset from the pivot',()=>{const c=createCourse(),p=c.platforms[8],w=createWorld();Object.assign(w,{x:1,z:p.z+2,y:p.top,grounded:true});c.advance(3,w);assert.ok(Math.abs(w.x-1)>.05);assert.ok(Math.abs(Math.hypot(w.x-p.x,w.z-p.z)-Math.sqrt(5))<1e-8);});

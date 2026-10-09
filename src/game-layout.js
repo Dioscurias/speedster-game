@@ -11,7 +11,7 @@ export function mountGameLayout(parkour,autoplay){
  if(parkour){
   move('header',toolbar,'actions');const exit=toolbar.querySelector('a');if(exit){exit.href='/play';exit.target='_top';exit.textContent='Maps';}
   move('#parkour-scene',viewport);move('#overlay',viewport);
-  move('#progress',rail,'progress');move('#hint',footer,'help');move('#touch',footer,'movement');
+  move('#progress',rail,'progress');move('#ability-hud',rail,'abilities');move('#hint',footer,'help');move('#touch',footer,'movement');
  }else{
   const frame=document.querySelector('.game-frame');
   move('.scene-top',toolbar,'actions');move('.compass-hud',toolbar,'compass');

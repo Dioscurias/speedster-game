@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {applyBlast} from '../src/parkour-combat.js';
+test('charged blast breaks designated targets and pushes unbreakable targets',()=>{for(const breakable of [true,false]){const t={breakable,health:60,vx:0,vy:0,vz:0,broken:false};applyBlast(t,{damage:80,force:18},{x:0,y:0,z:-1});assert.equal(t.broken,breakable);assert.equal(t.vz,-18);assert.ok(t.vy>0);}});
+import * as THREE from 'three';
+import {createCourse} from '../src/parkour-course.js';
+import {buildParkourMap} from '../src/parkour-map.js';
+test('visual geometry clearance includes gate posts and respects world origin shifts',()=>{const c=createCourse(),scene=new THREE.Scene(),map=buildParkourMap(scene,c);map.update({x:20,z:30},0,0);assert.equal(map.blockedVolume(0,0,0,.4,1.86),false);assert.equal(map.blockedVolume(2.3,c.finish.top,c.finish.z,.4,1.86),true);});
+import {ParkourCombat} from '../src/parkour-combat.js';
+test('swept projectile ray hits and breaks a target instead of tunnelling through it',()=>{const scene=new THREE.Scene(),c=createCourse(),map=buildParkourMap(scene,c),combat=new ParkourCombat(scene),w={x:0,y:0,z:0};map.update(w,0,0);const hand=new THREE.Vector3(0,.6,0),target=new THREE.Vector3(2.5,.6,-4);combat.fire(hand,target,{power:1,damage:80,force:18});combat.update(.2,w,c,map,false,0,hand,target,false);assert.equal(combat.targets[0].broken,true);assert.equal(combat.shots.length,0);assert.ok(combat.effects.length>0);});
