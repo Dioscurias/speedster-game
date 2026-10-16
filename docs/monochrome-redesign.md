@@ -1,12 +1,12 @@
 # Manta Ray monochrome redesign
 
-The existing renderer, routes, project data flow, and same-origin game player are retained. The site now uses black and white, self-hosted Inter Tight and IBM Plex Mono, real Speedster gameplay media, and large project tiles. The intro now plays the supplied ten-second manta film in a full-screen view, once per session. Skip is always available. Use `/?intro=1` to replay it. Visitors who saw the former logo-only intro can see the restored film on their next visit.
+The existing renderer, routes, project data flow, and same-origin game player are retained. The site now uses black and white, self-hosted Inter Tight and IBM Plex Mono, native 3840×2160 Speedster gameplay at 30 fps on desktop, 1920×1080 playback on mobile, and large project tiles. The gameplay was captured directly from a 4K game canvas and was not enlarged from the earlier 720p clip. The intro now plays the supplied ten-second manta film in a full-screen view, once per session. Skip is always available. Use `/?intro=1` to replay it. Visitors who saw the former logo-only intro can see the restored film on their next visit.
 
 ## Verification
 
 - `npm test`: 113 passed, zero failures.
 - `npm run build`: passed. The existing Three.js game chunk size warning remains; the lab does not load that chunk.
-- `scripts/lab-browser-check.mjs`: all lab routes, static metadata, conditional fields, video failure fallback, reduced motion, mobile navigation, and 360, 844, 1440, and 2560 pixel widths passed.
+- `scripts/lab-browser-check.mjs`: all lab routes, static metadata, conditional fields, video failure fallback, reduced motion, mobile navigation, and 360, 844, 1440, and 2560 pixel widths passed. The browser also verifies decoded 3840×2160 desktop video and 1920×1080 mobile video in both portrait and landscape.
 - `scripts/intro-browser-check.mjs`: supplied film playback and completion, visible Skip, Escape, session persistence, explicit replay, focus restoration, mobile framing, autoplay recovery, reduced motion, data saving, and direct links passed.
 - `scripts/manta-browser-check.mjs`: both game maps, full-screen viewport, HUD bounds, pause, Guide, map changes, movement, phase, and touch controls passed. Actual loaded game frames also pass neutral text, background, border, and token assertions.
 - Favicon and all generated social image pixels checked as monochrome.
@@ -22,6 +22,8 @@ Mobile Lighthouse measurements from the monochrome redesign before the opening f
 | project | 99 | 100 |
 
 After restoring the supplied opening film, the homepage measured 97 for mobile performance and 100 for accessibility on the local production preview.
+
+After the native 4K gameplay upgrade, the homepage measured 93 for mobile performance and 100 for accessibility on the local production preview.
 
 Scores are measurements of the lab templates, not a performance claim about the running 3D game.
 

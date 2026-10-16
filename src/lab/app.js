@@ -22,7 +22,7 @@ const videos=[...document.querySelectorAll('[data-gameplay-video]')],visible=new
 let mediaTimer;
 function playVisible(){
  if(document.documentElement.classList.contains('intro-active')||document.hidden)return;
- for(const video of visible){if(reduced.matches||navigator.connection?.saveData){video.pause();continue;}if(!video.hasAttribute('src'))video.src=matchMedia('(max-width: 600px)').matches&&video.dataset.mobileSrc?video.dataset.mobileSrc:video.dataset.src;video.play().catch(()=>{});}
+ for(const video of visible){if(reduced.matches||navigator.connection?.saveData){video.pause();continue;}if(!video.hasAttribute('src'))video.src=matchMedia('(max-width: 600px), (pointer: coarse)').matches&&video.dataset.mobileSrc?video.dataset.mobileSrc:video.dataset.src;video.play().catch(()=>{});}
 }
 const mediaObserver=new IntersectionObserver(entries=>{for(const entry of entries){if(entry.isIntersecting)visible.add(entry.target);else{visible.delete(entry.target);entry.target.pause();}}clearTimeout(mediaTimer);mediaTimer=setTimeout(playVisible,500);},{threshold:.12});
 for(const video of videos){video.addEventListener('playing',()=>video.classList.add('is-playing'));video.addEventListener('error',()=>{video.classList.remove('is-playing');video.pause();});mediaObserver.observe(video);}
