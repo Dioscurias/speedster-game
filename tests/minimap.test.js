@@ -34,3 +34,11 @@ test('map projection centers the player and keeps all four directions proportion
  assert.ok(view.visible({minX:-1000,maxX:world.x+5,minZ:-450,maxZ:-430}),'intersecting geometry stays visible even when its first vertex is outside the map');
  assert.equal(view.visible({minX:1100,maxX:1300,minZ:-450,maxZ:-430}),false);
 });
+
+test('heading-up radar keeps the forward direction at the top while north rotates',()=>{
+ const world={x:230,z:-440,heading:Math.PI/2},metrics=minimapMetrics(188,2),view=minimapProjection(world,metrics,{headingUp:true});
+ const ahead=view.project([world.x+300,world.z]),north=view.project([world.x,world.z-300]);
+ assert.ok(Math.abs(ahead[0]-94)<1e-9);assert.ok(ahead[1]<94,'eastward travel is shown ahead');
+ assert.ok(north[0]<94,'north is left when heading east');assert.ok(Math.abs(north[1]-94)<1e-9);
+ assert.deepEqual(view.project([world.x,world.z]),[94,94]);
+});

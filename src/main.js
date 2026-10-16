@@ -43,7 +43,7 @@ function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-aus
 function saveRecords(){const r=readRecords();r.distance=Math.max(r.distance,world.distance);r.topSpeed=Math.max(r.topSpeed,world.topSpeed);r.pickups=Math.max(r.pickups,world.collected);try{localStorage.setItem('velocity-austin',JSON.stringify(r));}catch{}}
 function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
 function pause(){if(world.status==='running'){world.status='paused';saveRecords();$('result').classList.remove('hidden');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game');}else if(world.status==='paused'){world.status='running';$('result').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}keysClear();}
-function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;}
+function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;if(document.body.classList.contains('fps-game'))window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}));}
 function handleMultiplayerState(data){
  const health=data.self.health;$('health-value').innerHTML=`${health}<span>%</span>`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
  if(health<lastHealth&&health>0)showToast(`${lastHealth-health} damage`,1100);
@@ -53,7 +53,7 @@ function handleMultiplayerState(data){
  lastHealth=health;
 }
 function contacts(){for(const car of city.traffic){const dx=world.x-car.x,dz=world.z-car.z,heading=Math.atan2(car.vx,car.vz),lateral=dx*Math.cos(heading)-dz*Math.sin(heading),longitudinal=dx*Math.sin(heading)+dz*Math.cos(heading);if(Math.abs(lateral)<1.25&&Math.abs(longitudinal)<2.6&&world.y<1.3&&hitTraffic(world,car))showToast('IMPACT · momentum absorbed',900);}
- for(const p of city.pickups)if(p.available<=world.elapsed&&Math.hypot(p.x-world.x,p.z-world.z)<1.7&&world.y<2){p.available=world.elapsed+25;collectEnergy(world);showToast('ϟ +25 SPEED FORCE',700);}}
+ for(const p of city.pickups)if(p.available<=world.elapsed&&Math.hypot(p.x-world.x,p.z-world.z)<1.7&&world.y<2){p.available=world.elapsed+25;collectEnergy(world);showToast('Bolt collected +1',700);}}
 function updateHUD(){
  $('speed').textContent=String(Math.round(world.speed*3.6)).padStart(3,'0');$('speed-mode').textContent=world.status==='ready'?'Ready':world.phasing?'Phasing':world.wallRunning?'Wall run':!world.grounded?'Airborne':world.slowing?'Slow time':world.boosting?'Boost':world.speed<.3?'Stopped':'Running';
  $('peak-speed').innerHTML=`${Math.round(world.topSpeed*3.6)}<span> KM/H</span>`;$('energy-label').innerHTML=`${Math.round(world.energy)}<span>%</span>`;$('energy-fill').style.width=`${world.energy}%`;
@@ -64,9 +64,10 @@ function updateHUD(){
  const edge=Math.min(world.x-map.bounds.minX,map.bounds.maxX-world.x,world.z-map.bounds.minZ,map.bounds.maxZ-world.z);
  $('scene-state').textContent=edge<25?'Map boundary':city.streetAt(world.x,world.z);$('street-name').textContent=city.streetAt(world.x,world.z);$('impact').style.opacity=world.impact>.25?String(world.impact):'0';
  const mapPlayers=multiplayer?Array.from(multiplayer.avatars.values(),avatar=>avatar.state).filter(Boolean).map(player=>({...player,color:speedsterColorForIndex(player.colorIndex)})):[];
- city.drawMap($('minimap'),world,{players:mapPlayers,pickups:city.pickups});
+ const radar=$('minimap'),hudRadar=radar.dataset.hudRadar==='true';city.drawMap(radar,world,{players:mapPlayers,pickups:city.pickups,headingUp:radar.dataset.headingUp==='true',background:hudRadar?'transparent':undefined,north:!hudRadar,scaleLegend:!hudRadar});
  $('braking').textContent=`${Math.round(world.speed*world.speed/(2*PHYSICS.braking*world.grip))} m`;
  if(multiplayer){$('online-count').textContent=String(multiplayer.online);$('network-state').textContent=multiplayer.connected?'Connected':'Reconnecting';}
+ if(document.body.classList.contains('fps-game'))window.dispatchEvent(new CustomEvent('speedster:hud',{detail:{health:lastHealth,energy:world.energy,speed:world.speed*3.6,topSpeed:world.topSpeed*3.6,distance:world.distance,bolts:world.collected,heading:world.heading,boosting:world.boosting,status:world.status}}));
 }
 let shownHeading=0;
 function updateScene(dt){

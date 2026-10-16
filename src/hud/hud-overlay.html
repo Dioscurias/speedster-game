@@ -1,0 +1,32 @@
+<!-- Place this overlay beside your existing canvas inside a positioned, full-size container. -->
+<div class="speedster-hud" aria-label="Game status">
+  <button class="hud-radar" data-hud-region="radar" type="button" aria-label="Open map">
+    <canvas data-hud-radar width="368" height="368" aria-label="Nearby streets and players"></canvas>
+    <span class="hud-north-orbit" aria-hidden="true"><span class="hud-north">N</span></span>
+  </button>
+
+  <section class="hud-scores hud-panel" data-hud-region="scores" aria-label="Session progress">
+    <div><span class="hud-label">Distance</span><div class="hud-score-value"><strong data-hud-distance>0</strong><span data-hud-distance-unit>m</span></div></div>
+    <div><span class="hud-label">Bolts</span><strong class="hud-bolts" data-hud-bolts>0</strong></div>
+  </section>
+
+  <ol class="hud-events" data-hud-region="events" data-hud-events role="log" aria-label="Game events" aria-live="polite" aria-relevant="additions text"></ol>
+
+  <section class="hud-vitals hud-panel" data-hud-region="vitals" aria-label="Health and energy">
+    <div class="hud-vital-row" data-hud-health-row>
+      <strong class="hud-vital-number" data-hud-health>100</strong>
+      <div class="hud-vital-meter"><span class="hud-label">Health</span><div class="hud-bar" data-hud-health-meter role="progressbar" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span data-hud-health-fill></span></div></div>
+    </div>
+    <div class="hud-vital-row hud-energy" data-hud-energy-row>
+      <strong class="hud-vital-number" data-hud-energy>100</strong>
+      <div class="hud-vital-meter"><span class="hud-label">Energy</span><div class="hud-bar" data-hud-energy-meter role="progressbar" aria-label="Boost energy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span data-hud-energy-fill></span></div></div>
+    </div>
+  </section>
+
+  <section class="hud-speed hud-panel" data-hud-region="speed" aria-label="Speed">
+    <div class="hud-speed-value"><strong data-hud-speed>0</strong><span class="hud-unit">KM/H</span></div>
+    <p class="hud-top-speed">Top <span data-hud-top-speed>0</span> KM/H</p>
+  </section>
+
+  <p class="hud-start-hint" data-hud-hint hidden>WASD move · Space jump · Shift sprint</p>
+</div>

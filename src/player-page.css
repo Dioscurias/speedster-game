@@ -66,6 +66,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{o
 #player{border:1px solid var(--rule);overflow:hidden;background:var(--page)}
 #frame-slot{height:clamp(540px,72vh,900px)}
 #game-window{display:block;width:100%;height:100%;border:0}
+.playing-game{overflow:hidden}
+.playing-game #player{position:fixed;inset:0;z-index:100;width:100%;height:100dvh;border:0}
+.playing-game #frame-slot{height:100%}
+.playing-game .player-toolbar,.playing-game .player-help,.playing-game .player-header{display:none}
 #player-message:empty{display:none}
 #player-message{padding:0 24px;color:var(--muted);font-size:13px}
 #player:fullscreen{width:100%;height:100dvh;display:flex;flex-direction:column;border:0}

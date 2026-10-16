@@ -36,6 +36,7 @@ try{
  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false;o.material=new THREE.MeshStandardMaterial({color:'#147db8',emissive:'#36cfff',emissiveIntensity:1.1,roughness:.4});}});runner.add(model);animator=new CharacterAnimation(model,human.animations,world);fx=new JumpFX(scene,runner,course.collider.surface);$('play').disabled=false;$('play').textContent='Begin journey';
 }catch(error){console.error(error);$('description').textContent='The character could not load. Reload to try again.';$('play').textContent='Reload';$('play').disabled=false;$('play').onclick=()=>location.reload();}
 window.__parkour={getState:()=>({...world}),getProgress:()=>course.update(world),getPlatforms:()=>course.platforms.map(p=>({...p})),getAbilities:()=>({teleports:abilities.teleports(abilityTime),blast:abilities.status(abilityTime)}),getCombat:()=>({projectiles:combat.shots.length,effects:combat.effects.length}),getTargets:()=>combat.targets.map(t=>({health:t.health,broken:t.broken,x:t.x,y:t.y,z:t.z}))};
+let lastHud=0;
 function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(rawDt,.05);last=now;let simulationDelta=0;
  if(animator&&world.status==='running'){
   abilityTime+=rawDt;
@@ -63,6 +64,7 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
   if(!$('reduced').checked)camera.position.x+=Math.sin(world.worldTime*97)*combat.shake;
   hud.update(world,abilities,abilityTime,$('reduced').checked);
  }
+ if(document.body.classList.contains('fps-game')&&now-lastHud>100){lastHud=now;window.dispatchEvent(new CustomEvent('speedster:hud',{detail:{health:100,energy:world.energy,speed:world.speed*3.6,topSpeed:world.topSpeed*3.6,distance:world.distance,bolts:world.collected,heading:world.heading,boosting:world.boosting,status:world.status,x:world.x,z:world.z}}));}
  renderer.render(scene,camera);
 }
 camera.position.set(0,3,7);requestAnimationFrame(frame);
