@@ -6,6 +6,7 @@ async function enterAustin(page,name){const frame=page.frameLocator('#game-windo
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base);await page.locator('.site-hero').waitFor();await page.evaluate(()=>document.fonts.ready);
+ await page.locator('body > .manta-loading').waitFor({state:'hidden'});if(await page.locator('#site-intro[open]').count())await page.locator('[data-intro-skip]').click();await page.locator('#site-intro[open]').waitFor({state:'hidden'});
  assert.match(await page.title(),/Manta Ray/);assert.equal(await page.locator('symbol#manta').count(),1);
  for(const [width,height] of [[360,800],[844,390],[1440,900],[2560,1440]]){
   await page.setViewportSize({width,height});await page.waitForTimeout(150);

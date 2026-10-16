@@ -3,10 +3,12 @@ import {resolveRoute,filterProjects,GAME_PATH} from './project-model.js';
 import {renderPage} from './pages.js';
 import {wireDialog} from '../ui/components.js';
 import {mountLabMotion} from './motion.js';
+import {mountIntro} from './intro.js';
 
 document.body.classList.add('manta-site','manta-lab');
 if(!document.getElementById('main-content'))document.body.innerHTML=renderPage(location.pathname);
 const motion=mountLabMotion(),navigation=document.getElementById('navigation-dialog');wireDialog(navigation);
+const destroyIntro=mountIntro(motion);
 document.getElementById('open-navigation').onclick=()=>{motion.stop();navigation.showModal();};
 navigation.addEventListener('close',()=>{if(!document.body.classList.contains('playing-game'))motion.start();});navigation.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>navigation.close()));
 
@@ -25,4 +27,4 @@ const preview=document.querySelector('[data-live-preview]');let previewObserver;
 if(preview){previewObserver=new IntersectionObserver(entries=>{for(const entry of entries){const slot=preview.querySelector('.preview-slot');if(entry.isIntersecting&&!slot.firstChild){const frame=document.createElement('iframe');frame.title='Speedster live preview';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.src=GAME_PATH+'?embed=1&preview=1&map=austin';slot.append(frame);}else if(!entry.isIntersecting)slot.replaceChildren();}},{rootMargin:'250px'});previewObserver.observe(preview);}
 document.querySelectorAll('.project-row video').forEach(video=>{const row=video.closest('.project-row');row.addEventListener('mouseenter',()=>{if(!matchMedia('(prefers-reduced-motion: reduce)').matches)video.play().catch(()=>{});});row.addEventListener('mouseleave',()=>video.pause());});
 let destroyPlayer;if(resolveRoute(location.pathname).type==='play'){const {mountPlayer}=await import('../game/player.js');destroyPlayer=mountPlayer(motion);}
-window.addEventListener('pagehide',()=>{motion.destroy();previewObserver?.disconnect();destroyPlayer?.();},{once:true});
+window.addEventListener('pagehide',()=>{destroyIntro();motion.destroy();previewObserver?.disconnect();destroyPlayer?.();},{once:true});

@@ -54,6 +54,7 @@ Headline options:
 - **Game branding:** `src/bootstrap.js`, `src/manta-layout.js` and `src/hud/manta-hud.js` give the game its Speedster title. The radar's large marker is a neutral heading arrow. The manta belongs to the lab. The HUD model, layout CSS, colors, stats, controls and behavior are unchanged.
 - **Engine bindings:** `src/game/game-shell.html` retains the original DOM IDs required by the engine. `src/bootstrap.js` loads that shell only for the embedded play or preview route. Lab pages never mount the HUD.
 - **Responsive and motion:** Native links work without JavaScript. The pinned feature falls back to normal document flow on small screens and under reduced motion. All shared focus and dialog behavior is retained.
+- **Opening film:** `src/lab/intro.js` and `intro.css` add the supplied film only to Home. It plays once per tab, starts muted, and closes on completion, Skip or Escape. Direct section links, reduced motion and data saving bypass it without fetching a video. Desktop and mobile H.264/AAC versions plus a poster are in `public/brand/`. The native dialog releases focus and scrolling when playback fails. Run `TEST_URL=http://127.0.0.1:5188 node scripts/intro-browser-check.mjs` against the production preview to verify playback and fallback behavior. The once-per-tab flag is `manta-ray:intro-seen:v1` in session storage.
 
 ## Verification
 

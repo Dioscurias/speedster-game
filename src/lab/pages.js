@@ -3,6 +3,7 @@ import {GAME_PATH,resolveRoute,escapeHTML as e,safeURL} from './project-model.js
 import {brandSprite,brand,manta,icon,button,header,dialog} from '../ui/components.js';
 import {ProjectRow,ProjectPage,FilterSegmented,StageTrack,LogEntry,LabRings,Placeholder,value} from './components.js';
 import {maps} from '../game/maps.js';
+import {IntroDialog} from './intro.js';
 
 const manifesto='Manta Ray is a lab for ideas that become projects. The work spans games, insurtech, and AI.';
 const words=text=>text.split(' ').map(word=>`<span>${e(word)}</span>`).join(' ');
@@ -26,5 +27,5 @@ function NavigationDialog(){return dialog('navigation-dialog','navigation',`<p c
 export function MapsDialog(){return dialog('maps-dialog','maps',`<p class="mr-caption">Speedster / Change map</p><h2 id="maps-dialog-title">Where to?</h2><fieldset class="map-options"><legend class="sr-only">Choose a map</legend>${maps.map((map,i)=>`<label class="map-option"><input type="radio" name="map" value="${map.id}" aria-label="${map.name}" ${i===0?'checked':''}><span class="tile-number metadata">0${i+1}</span><span class="map-tile-copy"><strong>${map.name}</strong><span>${map.kind} / ${map.mode}</span><small>${map.hint}</small></span><img src="${map.image}" alt="" width="1390" height="992"><span class="tile-check" aria-hidden="true">${icon('arrow')}</span></label>`).join('')}</fieldset><div class="launch-row"><p id="selection-status" role="status">Austin selected</p>${button('Play',{id:'launch-game'})}</div>`);}
 export function renderPage(path){const route=resolveRoute(path);let body;
  switch(route.type){case'home':body=Home();break;case'projects':body=Projects();break;case'about':body=About();break;case'project':body=ProjectPage(route.project,projects);break;case'play':body=Play();break;default:body=`<main id="main-content"><section class="page-intro section-pad"><p class="metadata">404</p><h1>Not here.</h1><p>This page is not in the project index.</p>${button('View projects',{href:'/projects',ghost:true})}</section></main>`;}
- return `${brandSprite()}<a class="skip-link" href="#main-content">Skip to content</a>${header(route.type==='project'?'projects':route.type)}<div class="site-grain" aria-hidden="true"></div>${body}${Footer()}${NavigationDialog()}${route.type==='play'?MapsDialog():''}`;
+ return `${brandSprite()}<a class="skip-link" href="#main-content">Skip to content</a>${header(route.type==='project'?'projects':route.type)}<div class="site-grain" aria-hidden="true"></div>${body}${Footer()}${NavigationDialog()}${route.type==='play'?MapsDialog():''}${route.type==='home'?IntroDialog():''}`;
 }

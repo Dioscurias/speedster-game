@@ -9,6 +9,7 @@ try{
   assert.ok(html.includes('application/ld+json'),'Organization JSON-LD is in static HTML');
   if(path.startsWith('/projects/')){const project=projects.find(p=>path.endsWith(p.slug));assert.ok(html.includes(`<title>${project.name} | Manta Ray</title>`));assert.ok(html.includes(project.summary));assert.ok(html.includes(`/og/${project.slug}.png`));assert.ok(html.includes('Problem'));}
   await page.goto(base+path);await page.locator('#main-content').waitFor();await page.evaluate(()=>document.fonts.ready);
+  await page.locator('body > .manta-loading').waitFor({state:'hidden'});if(await page.locator('#site-intro[open]').count())await page.locator('[data-intro-skip]').click();await page.locator('#site-intro[open]').waitFor({state:'hidden'});
   assert.equal(await page.locator('.manta-hud').count(),0,'HUD is absent from lab pages');assert.equal(await page.locator('a[href="TBD"]').count(),0);assert.equal(await page.locator('body').innerText().then(t=>/Manta Lab/i.test(t)),false);
   for(const [width,height] of [[360,800],[844,390],[1440,900],[2560,1440]]){await page.setViewportSize({width,height});await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${path} fits ${width}`);}
  }
