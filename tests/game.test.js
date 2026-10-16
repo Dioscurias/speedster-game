@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorld,stepWorld,createCollider,cameraClearance,hitTraffic,collectEnergy,GRAVITY,RUN_SPEED,BOOST_SPEED,updateView} from '../apps/speedster/src/game.js';
+import {createWorld,stepWorld,createCollider,cameraClearance,hitTraffic,collectEnergy,GRAVITY,RUN_SPEED,BOOST_SPEED,updateView} from '../src/game.js';
 const empty=createCollider([]);
 function running(){const s=createWorld();s.status='running';return s;}
 function advance(s,input,seconds=1,collider=empty){for(let t=0;t<seconds-1e-8;t+=1/120)stepWorld(s,input,1/120,collider);}

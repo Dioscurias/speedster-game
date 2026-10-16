@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-import {project,unproject,prepareMap,clipPolygon,nearestRoad} from '../apps/speedster/src/austin.js';
-const data=JSON.parse(readFileSync(new URL('../apps/speedster/public/assets/austin/map.json',import.meta.url)));const map=prepareMap(structuredClone(data));
+import {project,unproject,prepareMap,clipPolygon,nearestRoad} from '../src/austin.js';
+const data=JSON.parse(readFileSync(new URL('../public/assets/austin/map.json',import.meta.url)));const map=prepareMap(structuredClone(data));
 test('Austin map contains real Congress Avenue, Sixth Street and Capitol footprints',()=>{assert.ok(data.roads.some(r=>r.name==='Congress Avenue'));assert.ok(data.roads.some(r=>r.name==='East 6th Street'));assert.ok(data.buildings.some(b=>b.name==='Texas State Capitol'));assert.ok(data.areas.some(a=>a.name==='Lady Bird Lake'));});
 test('coordinate projection uses meters and round trips correctly',()=>{const p=project(data.origin.lon,data.origin.lat,data.origin);assert.deepEqual(p,{x:0,z:-0});const ll=unproject(100,-100,data.origin);const xy=project(ll.lon,ll.lat,data.origin);assert.ok(Math.abs(xy.x-100)<1e-6&&Math.abs(xy.z+100)<1e-6);});
 test('spawn is on Congress Avenue and outside buildings or water',()=>{assert.equal(map.collider.blocked(map.spawn.x,map.spawn.z),false);assert.equal(nearestRoad(map.spawn.x,map.spawn.z,map.lines).road.name,'Congress Avenue');});

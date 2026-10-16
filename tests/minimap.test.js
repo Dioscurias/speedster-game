@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {minimapMetrics,minimapProjection} from '../apps/speedster/src/minimap.js';
+import {minimapMetrics,minimapProjection} from '../src/minimap.js';
 
 test('minimap uses a square high-density backing canvas',()=>{
  const metrics=minimapMetrics(164,2);

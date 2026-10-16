@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createAbilities,findTeleport,ABILITY} from '../apps/speedster/src/parkour-abilities.js';
-import {createCourse} from '../apps/speedster/src/parkour-course.js';
-import {createWorld} from '../apps/speedster/src/game.js';
+import {createAbilities,findTeleport,ABILITY} from '../src/parkour-abilities.js';
+import {createCourse} from '../src/parkour-course.js';
+import {createWorld} from '../src/game.js';
 test('teleports refill individually on the rolling ten-second boundary',()=>{const a=createAbilities();assert.ok(a.spendTeleport(0));assert.ok(a.spendTeleport(2));assert.ok(a.spendTeleport(4));assert.equal(a.spendTeleport(9.99),false);assert.equal(a.teleports(10).available,1);assert.ok(a.spendTeleport(10));assert.equal(a.teleports(11).available,0);assert.equal(a.teleports(12).available,1);});
 test('teleport rejects gaps, map edges, and blocking geometry',()=>{const c=createCourse(),w=createWorld(c.spawn);const safe=findTeleport(w,{x:0,z:-1},c);assert.ok(safe);assert.equal(safe.z,w.z-ABILITY.teleportDistance);assert.equal(findTeleport(w,{x:1,z:0},c),null);w.z=-2;assert.equal(findTeleport(w,{x:0,z:-1},c),null);});
 test('blast charge, release, cooldown, and cancelled aim',()=>{const a=createAbilities();assert.ok(a.beginAim(0));assert.equal(a.release(.1),null);a.beginAim(1);const blast=a.release(1+ABILITY.chargeTime);assert.equal(blast.power,1);assert.equal(a.beginAim(2.3),false);assert.ok(a.beginAim(5));a.cancelAim();assert.equal(a.release(7),null);});

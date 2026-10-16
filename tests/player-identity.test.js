@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {recolorSpeedsterSuit,speedsterColorForIndex} from '../apps/speedster/src/superhero.js';
-import {createRoomEngine} from '../apps/speedster/src/room-engine.js';
-import {Multiplayer} from '../apps/speedster/src/multiplayer.js';
+import {recolorSpeedsterSuit,speedsterColorForIndex} from '../src/superhero.js';
+import {createRoomEngine} from '../src/room-engine.js';
+import {Multiplayer} from '../src/multiplayer.js';
 
 const state=x=>({x,z:0,y:0,vx:0,vz:0,heading:0,phasing:false});
 function suit(){
@@ -61,13 +61,13 @@ test('room serialization preserves names and authoritative colors across updates
  assert.equal(result.self.name,'Nico');assert.equal(result.players[0].name,'Maya');assert.equal(result.self.colorIndex,first.self.colorIndex);assert.notEqual(result.self.colorIndex,99);
 });
 test('a chosen name is saved and restored from local storage',async()=>{
- const profile=await import('../apps/speedster/src/player-profile.js?storage-test=saved'),values=new Map();
+ const profile=await import('../src/player-profile.js?storage-test=saved'),values=new Map();
  const storage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
  assert.equal(profile.readPlayerName(storage),'');assert.equal(profile.savePlayerName(' Nico ',storage),'Nico');
- const reloaded=await import('../apps/speedster/src/player-profile.js?storage-test=reloaded');assert.equal(reloaded.readPlayerName(storage),'Nico');
+ const reloaded=await import('../src/player-profile.js?storage-test=reloaded');assert.equal(reloaded.readPlayerName(storage),'Nico');
 });
 test('renaming still works when storage is blocked or full',async()=>{
- const profile=await import('../apps/speedster/src/player-profile.js?storage-test=blocked');
+ const profile=await import('../src/player-profile.js?storage-test=blocked');
  const storage={getItem:()=> 'Old name',setItem:()=>{throw new Error('Storage full');}};
  profile.savePlayerName('New name',storage);assert.equal(profile.readPlayerName(storage),'New name');
 });

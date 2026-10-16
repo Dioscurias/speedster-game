@@ -10,8 +10,28 @@
   "cleanUrls": true,
   "redirects": [
     {
+      "source": "/speedster",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/projects/speedster/play",
+      "destination": "/",
+      "permanent": false
+    },
+    {
       "source": "/play",
-      "destination": "/projects/speedster/play",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/projects/:path*",
+      "destination": "https://manta-ray-dioscurias.vercel.app/projects/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/about",
+      "destination": "https://manta-ray-dioscurias.vercel.app/about",
       "permanent": false
     }
   ]

@@ -19,11 +19,11 @@ async function openClient(name,viewport={width:1280,height:800},mobile=false){
   await roomHandler({method:'POST',body:route.request().postDataJSON()},{setHeader:(key,value)=>headers[key]=value,status(code){status=code;return this;},async json(body){await route.fulfill({status,headers:{...headers,'content-type':'application/json'},body:JSON.stringify(body)});}});
  });
  page.on('response',async response=>{if(!response.url().endsWith('/api/room'))return;client.calls++;try{if(response.ok())client.last=await response.json();}catch(error){if(!/No resource|navigated away|Target.*closed|Response body is unavailable/i.test(error.message))errors.push(error.message);}});
- await page.goto(base+'/projects/speedster/play');
- const frame=page.frameLocator('#game-window');await frame.getByRole('textbox',{name:'Player name',exact:true}).waitFor({timeout:90000});
+ await page.goto(base+'/');
+ const frame=page;await frame.getByRole('textbox',{name:'Player name',exact:true}).waitFor({timeout:90000});
  assert.equal(client.calls,0,'no multiplayer presence before choosing a name');
  await frame.getByRole('textbox',{name:'Player name',exact:true}).fill(name);await frame.locator('#manta-start').click();
- await page.waitForFunction(()=>document.querySelector('#game-window')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});
+ await page.waitForFunction(()=>window.__velocity?.getState().status==='running',null,{timeout:90000});
  return client;
 }
 try{
@@ -33,23 +33,23 @@ try{
  assert.equal(a.last.self.name,'Nico');assert.equal(b.last.self.name,'Maya');
  assert.equal(peer(a,b).name,'Maya');assert.equal(peer(b,a).name,'Nico');
  assert.equal(a.last.self.colorIndex,peer(b,a).colorIndex);assert.equal(b.last.self.colorIndex,peer(a,b).colorIndex);assert.notEqual(a.last.self.colorIndex,b.last.self.colorIndex);
- await until(async()=>await a.page.locator('#game-window').evaluate(f=>f.contentWindow.__drawnPlayerNames.includes('Maya'))&&await b.page.locator('#game-window').evaluate(f=>f.contentWindow.__drawnPlayerNames.includes('Nico')),'both names are drawn above actual remote avatars');
- for(const [client,key] of [[a,'d'],[b,'a']]){await client.page.frameLocator('#game-window').locator('.manta-stage').focus();await client.page.keyboard.down(key);await client.page.waitForTimeout(300);await client.page.keyboard.up(key);}
+ await until(async()=>await a.page.evaluate(()=>window.__drawnPlayerNames.includes('Maya'))&&await b.page.evaluate(()=>window.__drawnPlayerNames.includes('Nico')),'both names are drawn above actual remote avatars');
+ for(const [client,key] of [[a,'d'],[b,'a']]){await client.page.locator('.manta-stage').focus();await client.page.keyboard.down(key);await client.page.waitForTimeout(300);await client.page.keyboard.up(key);}
  const initial={id:a.last.self.id,color:a.last.self.colorIndex};
- const frame=a.page.frameLocator('#game-window');await frame.locator('.manta-stage').press('Escape');await frame.locator('#result:not(.hidden)').waitFor();
+ const frame=a.page;await frame.locator('.manta-stage').press('Escape');await frame.locator('#result:not(.hidden)').waitFor();
  await frame.locator('#hud-player-name').click();await frame.locator('#info-dialog[open]').waitFor();const edit=frame.getByRole('textbox',{name:'Player name',exact:true});await edit.fill('');await edit.pressSequentially('Nico Ray');await frame.getByRole('button',{name:'Save name',exact:true}).click();
  await until(()=>peer(b,a)?.name==='Nico Ray','renamed player reaches the other screen');
  await until(async()=>await frame.locator('#info-dialog').evaluate(dialog=>!dialog.classList.contains('player-name-dialog')),'closing the name form restores the shared dialog');
  assert.equal(a.last.self.colorIndex,initial.color);assert.equal(peer(b,a).colorIndex,initial.color);
- await until(async()=>await b.page.locator('#game-window').evaluate(f=>f.contentWindow.__drawnPlayerNames.includes('Nico Ray')),'updated name is drawn above the peer');
+ await until(async()=>await b.page.evaluate(()=>window.__drawnPlayerNames.includes('Nico Ray')),'updated name is drawn above the peer');
  await frame.locator('#resume').click();
- a.last=null;await a.page.reload();await a.page.waitForFunction(()=>document.querySelector('#game-window')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});
+ a.last=null;await a.page.reload();await a.page.waitForFunction(()=>window.__velocity?.getState().status==='running',null,{timeout:90000});
  await until(()=>a.last?.self.name==='Nico Ray','saved name survives refresh');assert.equal(a.last.self.id,initial.id);assert.equal(a.last.self.colorIndex,initial.color);
  await a.page.screenshot({path:'/private/tmp/speedster-identity-a.png'});await b.page.screenshot({path:'/private/tmp/speedster-identity-b.png'});
  const mobile=await openClient('Mobile',{width:360,height:800},true);
- await mobile.page.frameLocator('#game-window').locator('#hud-pause').click();await mobile.page.frameLocator('#game-window').locator('#hud-player-name').click();
+ await mobile.page.locator('#hud-pause').click();await mobile.page.locator('#hud-player-name').click();
  for(const viewport of [{width:360,height:800},{width:844,height:390}]){
-  await mobile.page.setViewportSize(viewport);const bounds=await mobile.page.locator('#game-window').evaluate(f=>{const nodes=[...f.contentDocument.querySelectorAll('#info-dialog input,#info-dialog [type=submit]')];return nodes.every(node=>{const r=node.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=f.clientWidth&&r.top>=0&&r.bottom<=f.clientHeight;});});assert.equal(bounds,true,'name editing fits mobile');
+  await mobile.page.setViewportSize(viewport);const bounds=await mobile.page.evaluate(()=>{const nodes=[...document.querySelectorAll('#info-dialog input,#info-dialog [type=submit]')];return nodes.every(node=>{const r=node.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;});});assert.equal(bounds,true,'name editing fits mobile');
  }
  assert.deepEqual(errors,[]);
  console.log('PASS: independent players, matching colors in both snapshots, actual name labels, pause-menu rename, saved names on refresh, and mobile forms.');
