@@ -1,6 +1,5 @@
-import {projects,PLACEHOLDER} from '../data/projects.ts';
+import {projects} from '../data/projects.ts';
 export const STAGES=['Idea','Prototype','Beta','Live'];
-export const STATUSES=['Live','Beta','Prototype','Research',PLACEHOLDER];
 export const GAME_PATH='/projects/speedster/play';
 export function filterProjects(list,status='All'){return status==='All'?list:list.filter(project=>project.status===status);}
 export function stageGroups(list){return {stages:STAGES.map(name=>({name,projects:list.filter(project=>project.stage===name)})),pending:list.filter(project=>!STAGES.includes(project.stage))};}
@@ -13,4 +12,4 @@ export function resolveRoute(path,list=projects){
  const project=list.find(project=>clean===`/projects/${project.slug}`);return project?{type:'project',project}:{type:'not-found'};
 }
 export function escapeHTML(value){return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
-export function safeURL(value){return value!==PLACEHOLDER&&(/^(https?:\/\/|\/[^/])/.test(value))?value:null;}
+export function safeURL(value){return typeof value==='string'&&(/^(https?:\/\/|\/[^/])/.test(value))?value:null;}

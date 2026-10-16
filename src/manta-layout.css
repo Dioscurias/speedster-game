@@ -4,19 +4,19 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
 .manta-game #scene,.manta-game #parkour-scene{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0}
 .manta-game #scene canvas,.manta-game #parkour-scene canvas{display:block;width:100%;height:100%}
 .manta-game #aim-reticle,.manta-game #speed-lines{display:none!important}
-.manta-game .manta-pause,.manta-game #death{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;overflow:auto;background:rgba(5,7,13,.91);backdrop-filter:none;font:13px/1.6 var(--body);border:0;border-radius:0}
+.manta-game .manta-pause,.manta-game #death{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;overflow:auto;background:rgba(0,0,0,.91);backdrop-filter:none;font:13px/1.6 var(--body);border:0;border-radius:0}
 .manta-game .manta-pause::after{content:'';position:absolute;inset:0;background:var(--grain);opacity:.045;pointer-events:none}
 .manta-game .manta-pause h2,.manta-game .manta-pause h1,.manta-game #death h2{font:600 clamp(48px,6vw,88px)/.95 var(--display);text-transform:uppercase;letter-spacing:-.02em;margin:0 0 10px;color:var(--ink)}
 .manta-game .pause-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 26px;color:var(--ink);font:700 16px var(--display);letter-spacing:.13em}
 .manta-game .pause-brand .manta-mark{width:40px;height:27px}
-.manta-game .manta-pause .mr-btn{display:inline-flex;position:relative;justify-content:space-between;align-items:center;width:240px;max-width:100%;min-height:48px;padding:0 20px;margin:0;border:1px solid var(--blue);border-radius:2px;background:var(--blue);color:var(--ink);font:600 12px var(--body);box-shadow:none}
-.manta-game .manta-pause .mr-btn--ghost{width:100%;border-color:var(--line);background:transparent}
+.manta-game .manta-pause .mr-btn{display:inline-flex;position:relative;justify-content:space-between;align-items:center;width:240px;max-width:100%;min-height:48px;padding:0 20px;margin:0;border:1px solid var(--fg);border-radius:2px;background:var(--fg);color:var(--bg);font:600 12px var(--body);box-shadow:none}
+.manta-game .manta-pause .mr-btn--ghost{width:100%;border-color:var(--line);background:transparent;color:var(--fg)}
 .manta-game .manta-menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(430px,100%);margin-top:14px}
 .manta-game .manta-pause .mr-menu-text{min-height:36px;margin:0;padding:5px 12px;background:none;color:var(--muted);border:0;border-radius:0;font:11px var(--body);cursor:pointer}
 .manta-game .manta-pause .card{display:flex;flex-direction:column;align-items:center;width:min(520px,100%);padding:0;max-height:100%;overflow:auto;background:transparent;color:var(--ink);border:0;border-radius:0;box-shadow:none;text-align:center}
 .manta-game .manta-pause .card>small,.manta-game .manta-pause #description{display:none}
 .manta-game .manta-pause .card label{display:block;position:relative;font:11px var(--body);color:var(--muted);margin:10px 0}
-.manta-game .manta-pause .card label input{accent-color:var(--blue);vertical-align:middle}
+.manta-game .manta-pause .card label input{accent-color:var(--fg);vertical-align:middle}
 .manta-game .manta-pause .card label:last-of-type{margin-bottom:24px}
 .manta-game #info-dialog.mr-dialog{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:2px;box-shadow:none;width:min(780px,calc(100% - 32px));padding:44px 36px;max-height:calc(100dvh - 32px);font-family:var(--body)}
 .manta-game #info-dialog.mr-dialog h2{color:var(--ink);font:600 56px/.95 var(--display);text-transform:uppercase;letter-spacing:-.02em;margin:20px 0 30px}
@@ -24,9 +24,9 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
 .manta-game #info-dialog .mr-dialog-close{position:absolute;top:12px;right:12px;min-height:36px;width:36px;height:36px;padding:0}
 .manta-game .map-overview-canvas{filter:grayscale(1)}
 .manta-game #city-overview{filter:grayscale(1);border-color:var(--line);border-radius:0}
-.manta-game .map-tools input{accent-color:var(--blue)}
+.manta-game .map-tools input{accent-color:var(--fg)}
 .manta-game .map-legend,.manta-game .map-legend span{color:var(--muted)!important}
-.manta-game button:focus-visible,.manta-game a:focus-visible,.manta-game input:focus-visible{outline:2px solid var(--blue-hi);outline-offset:4px}
+.manta-game button:focus-visible,.manta-game a:focus-visible,.manta-game input:focus-visible{outline:2px solid var(--fg);outline-offset:4px}
 .manta-game .manta-touch-controls{display:none}
 .manta-game .heading-marker{width:32px;height:26px;fill:currentColor}
 .manta-game .speedster-wordmark{font:700 24px var(--display);letter-spacing:.12em}
@@ -38,20 +38,28 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
 .manta-game #info-dialog.player-name-dialog{width:min(420px,calc(100% - 32px))}
 .manta-game #info-dialog.player-name-dialog h2{font-size:44px;margin-top:0}
 .manta-game #info-dialog.player-name-dialog .player-name-form{width:100%}
-.loading-symbol{position:relative;width:120px;height:120px;margin-bottom:18px}.loading-ring{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--blue-hi);stroke-width:.6;stroke-dasharray:100;animation:loading-draw 2.6s ease-in-out infinite}.loading-manta{position:absolute;left:30px;top:40px;width:60px;height:40px;animation:manta-glide 2.6s ease-in-out infinite}.loading-wordmark{font:600 28px var(--display);letter-spacing:.16em}.manta-loading p{font:10px var(--body);color:var(--muted);margin:0 0 22px}.manta-loading .mr-btn{min-width:175px}
-@keyframes loading-draw{0%{stroke-dashoffset:100;opacity:.3}70%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:-100;opacity:.3}}
-@keyframes manta-glide{0%,100%{transform:translateY(4px) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}
+.loading-wordmark{font:600 28px var(--display);letter-spacing:.08em}.manta-loading p{font:11px var(--body);color:var(--muted);margin:0 0 22px}.manta-loading .mr-btn{min-width:175px}
 @media(pointer:coarse){
  .manta-game .manta-touch-controls{display:flex;position:absolute;left:18px;right:18px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:12;align-items:flex-end;justify-content:space-between;pointer-events:none;gap:12px}
  .manta-game .touch-controls{position:static;display:flex;width:100%;justify-content:space-between;align-items:flex-end;pointer-events:none;gap:12px;bottom:auto;left:auto;right:auto}
  .manta-game .touch-dpad{display:grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(2,38px);gap:3px;pointer-events:auto}
  .manta-game .touch-dpad button:nth-child(1){grid-column:2;grid-row:1}.manta-game .touch-dpad button:nth-child(2){grid-column:1;grid-row:2}.manta-game .touch-dpad button:nth-child(3){grid-column:2;grid-row:2}.manta-game .touch-dpad button:nth-child(4){grid-column:3;grid-row:2}
- .manta-game .manta-touch-controls button{display:grid;place-items:center;min-width:34px;min-height:36px;max-height:40px;border:1px solid rgba(233,238,251,.3);border-radius:2px;padding:0 8px;margin:0;background:rgba(5,7,13,.65);color:var(--ink);font:10px var(--body);pointer-events:auto;touch-action:none}
+ .manta-game .manta-touch-controls button{display:grid;place-items:center;min-width:34px;min-height:36px;max-height:40px;border:1px solid rgba(255,255,255,.3);border-radius:2px;padding:0 8px;margin:0;background:rgba(0,0,0,.65);color:var(--ink);font:10px var(--body);pointer-events:auto;touch-action:none}
  .manta-game .touch-powers{display:flex;flex-direction:column;gap:4px;pointer-events:auto}.manta-game .touch-powers button{width:40px;min-height:32px}
  .manta-game .view-buttons,.manta-game .touch-camera{position:absolute;display:grid;grid-template-columns:repeat(2,32px);gap:3px;left:auto;right:52px;top:auto;bottom:0;padding:0;background:none;border:0;pointer-events:auto}
  .manta-game #touch{position:static;display:flex;flex-wrap:wrap;max-width:270px;gap:4px;pointer-events:auto;padding-right:50px}
- .manta-game .manta-touch-controls button:active{background:var(--blue);color:var(--ink)}
+ .manta-game .manta-touch-controls button:active{background:var(--fg);color:var(--bg)}
 }
 @media(max-height:500px){.manta-game .manta-pause,.manta-game #death{padding:18px;gap:10px;justify-content:flex-start}.manta-game .pause-brand{margin:0 0 10px}.manta-game .manta-pause h1,.manta-game .manta-pause h2{font-size:44px}.manta-game .manta-menu-actions{margin-top:0}.manta-game .manta-pause .card label{margin:5px 0}.manta-game .manta-pause .card label:last-of-type{margin-bottom:12px}}
 @media(max-height:500px){.manta-game .manta-loading{gap:8px}.manta-game .manta-loading .loading-symbol{width:60px;height:60px;margin:0}.manta-game .manta-loading p{margin-bottom:6px}.manta-game .player-name-form{gap:8px}.manta-game #info-dialog.player-name-dialog{padding:32px 22px}.manta-game #info-dialog.player-name-dialog h2{margin-bottom:16px}}
 @media(max-width:600px){.manta-game .manta-menu-actions{grid-template-columns:1fr;width:240px}.manta-game #info-dialog.mr-dialog{padding:40px 22px}.manta-game .mr-controls{font-size:12px;gap:14px 18px}.manta-game #info-dialog.mr-dialog h2{font-size:46px}}
+
+.manta-loading>.loading-manta{position:static;width:120px;height:auto;animation:none;margin-bottom:24px}.manta-loading{position:fixed}.loading-symbol,.loading-ring{display:none}
+
+/* The engines load legacy CSS after the shared UI. Keep visible copy and touch
+   controls neutral without changing the scene or multiplayer suit colors. */
+.manta-game #info-dialog :is(p,li,small,dd),.manta-game .manta-pause p,.manta-game #death p{color:var(--muted)}
+.manta-game #info-dialog :is(a,h2,h3,strong){color:var(--fg)}
+@media(pointer:coarse){.manta-game #touch button[data-key]{background:rgba(0,0,0,.65);color:var(--fg)}.manta-game #touch button[data-key]:active{background:var(--fg);color:var(--bg)}}
+
+.manta-game .hud-radar canvas,.manta-game .hud-radar #minimap{border:0;border-color:var(--line);background:transparent}

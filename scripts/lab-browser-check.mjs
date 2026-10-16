@@ -1,33 +1,32 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
-import {projects,PLACEHOLDER} from '../src/data/projects.ts';
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}),base=process.env.TEST_URL||'http://127.0.0.1:5173',errors=[];
+import {projects} from '../src/data/projects.ts';
+const base=process.env.TEST_URL||'http://127.0.0.1:5190',errors=[];
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>errors.push(error.message));
- for(const path of ['/','/projects','/about',...projects.map(p=>'/projects/'+p.slug)]){
-  const response=await page.request.get(base+path),html=await response.text();assert.equal(response.status(),200,path);
-  assert.ok(html.includes('application/ld+json'),'Organization JSON-LD is in static HTML');
-  if(path.startsWith('/projects/')){const project=projects.find(p=>path.endsWith(p.slug));assert.ok(html.includes(`<title>${project.name} | Manta Ray</title>`));assert.ok(html.includes(project.summary));assert.ok(html.includes(`/og/${project.slug}.png`));assert.ok(html.includes('Problem'));}
-  await page.goto(base+path);await page.locator('#main-content').waitFor();await page.evaluate(()=>document.fonts.ready);
-  await page.locator('body > .manta-loading').waitFor({state:'hidden'});if(await page.locator('#site-intro[open]').count())await page.locator('[data-intro-skip]').click();await page.locator('#site-intro[open]').waitFor({state:'hidden'});
-  assert.equal(await page.locator('.manta-hud').count(),0,'HUD is absent from lab pages');assert.equal(await page.locator('a[href="TBD"]').count(),0);assert.equal(await page.locator('body').innerText().then(t=>/Manta Lab/i.test(t)),false);
-  for(const [width,height] of [[360,800],[844,390],[1440,900],[2560,1440]]){await page.setViewportSize({width,height});await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${path} fits ${width}`);}
+ const context=await browser.newContext({viewport:{width:1440,height:900},reducedMotion:'reduce'}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+ const paths=['/','/projects','/about',...projects.map(p=>'/projects/'+p.slug)];
+ for(const path of paths){
+  const response=await page.request.get(base+path),html=await response.text();assert.equal(response.status(),200,path);assert.match(html,/application\/ld\+json/);assert.match(html,/<meta name="theme-color" content="#000000">/);assert.doesNotMatch(html,/TBD|Loading preview|A lab for what comes next|plankton|rolling-track/);
+  if(path.startsWith('/projects/')){const project=projects.find(p=>path.endsWith(p.slug));assert.ok(html.includes(`<title>${project.name} | Manta Ray</title>`));assert.ok(html.includes(project.description));}
+  await page.goto(base+path);await page.locator('body > .manta-loading').waitFor({state:'hidden'});await page.evaluate(()=>document.fonts.ready);
+  assert.equal(await page.locator('.manta-hud,canvas,iframe').count(),0,'the lab never loads the game or a decorative canvas');
+  assert.equal(await page.locator('body').innerText().then(text=>/TBD|Manta Lab|—/.test(text)),false);
+  const nonNeutral=await page.evaluate(()=>{const check=color=>{const m=color.match(/^rgba?\(([^)]+)\)/);if(!m)return false;const [r,g,b]=m[1].split(',').map(Number);return Math.max(r,g,b)-Math.min(r,g,b)>1;};return [...document.querySelectorAll('body *')].filter(n=>n.getBoundingClientRect().width).flatMap(n=>{const s=getComputedStyle(n);return ['color','backgroundColor','borderTopColor','outlineColor'].filter(key=>check(s[key])).map(key=>n.tagName+'.'+n.className+':'+key+':'+s[key]);});});assert.deepEqual(nonNeutral,[],path+' is monochrome');
+  for(const [width,height] of [[360,800],[844,390],[1440,900],[2560,1440]]){await page.setViewportSize({width,height});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${path} fits ${width}`);}
  }
- await page.goto(base+'/about');await page.locator('.site-header nav a[href="/#contact"]').click();await page.waitForURL('**/#contact');await page.waitForFunction(()=>{const r=document.getElementById('contact').getBoundingClientRect();return r.top<innerHeight&&r.bottom>0;});
- await page.goto(base);await page.setViewportSize({width:1440,height:900});
- assert.deepEqual(await page.locator('main>section').evaluateAll(nodes=>nodes.map(n=>n.id||n.classList[0])),['site-hero','manifesto','project-index','pipeline','featured-project','lab-log','contact']);
- assert.equal(await page.locator('.log-entry').count(),4);assert.equal(await page.locator('.stage-pending .stage-project').count(),4);assert.equal(await page.locator('.copy-email').isDisabled(),true);
- assert.equal(await page.locator('[data-project-row]:visible').count(),4);await page.locator('[data-status-filter="Live"]').click();assert.equal(await page.locator('[data-project-row]:visible').count(),0);assert.equal(await page.locator('.filter-empty').isVisible(),true);
- await page.locator(`[data-status-filter="${PLACEHOLDER}"]`).click();assert.equal(await page.locator('[data-project-row]:visible').count(),4);await page.locator('[data-status-filter="All"]').click();
- assert.match(await page.locator('.project-code').first().evaluate(n=>getComputedStyle(n).fontFamily),/JetBrains Mono/);
- await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(150);await page.screenshot({path:'/private/tmp/manta-lab-home.png'});
- await page.locator('#featured-project').scrollIntoViewIfNeeded();await page.locator('.preview-slot iframe').waitFor({timeout:30000});
- const preview=page.frameLocator('.preview-slot iframe');await preview.locator('.speedster-preview #scene canvas').waitFor({timeout:90000});await page.waitForFunction(()=>document.querySelector('.preview-slot iframe')?.contentWindow.__velocity?.assetsLoaded,null,{timeout:90000});assert.equal(await page.locator('.preview-slot iframe').evaluate(f=>f.contentWindow.__velocity.getState().status),'ready','preview does not enter a multiplayer room');assert.equal(await preview.locator('.manta-hud').count(),0);assert.equal(await preview.locator('use[href="#manta"]').count(),0);await page.screenshot({path:'/private/tmp/manta-live-preview.png'});
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelectorAll('.pin-spacer').length===0&&getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');assert.equal(await page.locator('.lab-hero-mark').evaluate(n=>getComputedStyle(n).animationName),'none');await page.screenshot({path:'/private/tmp/manta-lab-full.png',fullPage:true});
- await page.setViewportSize({width:360,height:800});await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:'/private/tmp/manta-lab-mobile.png'});await page.click('#open-navigation');await page.locator('#navigation-dialog[open]').waitFor();assert.deepEqual(await page.locator('.mobile-navigation strong').evaluateAll(nodes=>nodes.map(n=>n.firstChild.textContent)),['Projects','About','Contact']);await page.keyboard.press('Escape');
- await page.setViewportSize({width:1440,height:900});await page.goto(base+'/projects/burkit');await page.screenshot({path:'/private/tmp/manta-project-burkit.png',fullPage:true});assert.equal(await page.locator('.project-body-section').count(),3);assert.equal(await page.locator('.project-gallery .specimen-frame').count(),2);
- if(process.env.TEST_STATIC==='1'){for(const project of projects){const response=await page.request.get(base+'/og/'+project.slug+'.png');assert.equal(response.status(),200);assert.match(response.headers()['content-type'],/image\/png/);const png=await response.body();assert.equal(png.readUInt32BE(16),1200);assert.equal(png.readUInt32BE(20),630);}}
- if(process.env.TEST_DEPLOYED==='1'){const missing=await page.request.get(base+'/projects/not-a-project');assert.equal(missing.status(),404);}
- assert.deepEqual(errors,[]);console.log('PASS: all lab routes and static metadata, four responsive sizes, single project data source, truthful placeholders, filters, pipeline, HUD-free live preview, mobile navigation, and reduced motion.');
+ await page.setViewportSize({width:1440,height:900});await page.goto(base+'/');await page.locator('body > .manta-loading').waitFor({state:'hidden'});await page.evaluate(()=>document.fonts.ready);
+ assert.deepEqual(await page.locator('main>section').evaluateAll(nodes=>nodes.map(n=>n.id||n.classList[0])),['site-hero','project-index','featured-project','contact']);
+ assert.equal(await page.locator('[data-status-filter]').count(),0);assert.equal(await page.locator('.contact-links').count(),0);assert.equal(await page.locator('[data-project-row]').count(),4);assert.equal(await page.locator('.media-mark').count(),3);
+ assert.match(await page.locator('.metadata').first().evaluate(n=>getComputedStyle(n).fontFamily),/IBM Plex Mono/);
+ assert.equal(await page.locator('.site-hero img').evaluate(n=>n.complete&&n.naturalWidth>0),true);
+ assert.equal(await page.locator('[data-hero-video]').getAttribute('src'),null,'reduced motion keeps the poster');
+ await page.screenshot({path:'/private/tmp/manta-monochrome-desktop.png'});await page.screenshot({path:'/private/tmp/manta-monochrome-full.png',fullPage:true});
+ await page.setViewportSize({width:360,height:800});await page.screenshot({path:'/private/tmp/manta-monochrome-mobile.png'});await page.click('#open-navigation');await page.locator('#navigation-dialog[open]').waitFor();assert.equal(await page.locator('.mobile-navigation a').count(),3);await page.keyboard.press('Escape');assert.equal(await page.locator('#navigation-dialog').isVisible(),false);
+ await page.goto(base+'/about');await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-monochrome-about.png',fullPage:true});await page.locator('.site-header nav a[href="/#contact"]').click();await page.waitForURL('**/#contact');await page.waitForFunction(()=>document.getElementById('contact').getBoundingClientRect().top<innerHeight);
+ await page.goto(base+'/projects/burkit');await page.screenshot({path:'/private/tmp/manta-monochrome-project.png',fullPage:true});assert.equal(await page.locator('.project-body-section,.project-facts,.project-gallery').count(),0);
+ for(const project of projects){const response=await page.request.get(base+'/og/'+project.slug+'.png');assert.equal(response.status(),200);const png=await response.body();assert.equal(png.readUInt32BE(16),1200);assert.equal(png.readUInt32BE(20),630);}
+ const film=await browser.newPage({viewport:{width:1440,height:900}});film.on('pageerror',e=>errors.push(e.message));await film.goto(base+'/#contact');await film.evaluate(()=>scrollTo(0,0));await film.locator('[data-hero-video]').waitFor();await film.waitForFunction(()=>document.querySelector('[data-hero-video]').readyState>=2,null,{timeout:20000});await film.locator('[data-hero-video].is-playing').waitFor();assert.equal(await film.locator('[data-hero-video]').evaluate(n=>n.muted&&n.loop&&n.playsInline),true);
+ await film.route('**/brand/*.mp4',route=>route.abort());await film.reload();await film.locator('body > .manta-loading').waitFor({state:'hidden'});assert.equal(await film.locator('.site-hero img').evaluate(n=>n.complete&&n.naturalWidth>0),true,'poster survives video failure');await film.close();
+ assert.deepEqual(errors,[]);console.log('PASS: all lab routes, static SEO, neutral colors, four responsive sizes, real media, poster fallback, conditional fields, reduced motion, and mobile navigation.');
 }finally{await browser.close();}
-await import('./manta-browser-check.mjs');

@@ -20,10 +20,10 @@ export default defineConfig({plugins:[{
   }
   writeFileSync(resolve(output,'404.html'),documentFor(template,'/404'));
   const images=resolve(output,'og');mkdirSync(images,{recursive:true});
-  const logoDataURI='data:image/png;base64,'+readFileSync(resolve('public/brand/manta-ray.png')).toString('base64');
+  const logoDataURI='data:image/png;base64,'+readFileSync(resolve('public/brand/manta-ray-mark.png')).toString('base64');
   for(const {slug,project} of socialImages()){
    const svg=ogSVG(project,logoDataURI);
-   const image=new Resvg(svg,{font:{loadSystemFonts:false,fontFiles:[resolve('public/fonts/barlow-condensed-600.ttf'),resolve('public/fonts/barlow-condensed-700.ttf'),resolve('scripts/fonts/jetbrains-mono-regular.ttf'),resolve('scripts/fonts/inter-variable.ttf')],defaultFontFamily:'Inter'}}).render().asPng();
+   const image=new Resvg(svg,{font:{loadSystemFonts:false,fontFiles:[resolve('scripts/fonts/inter-tight-variable.ttf'),resolve('scripts/fonts/ibm-plex-mono-regular.ttf')],defaultFontFamily:'Inter Tight'}}).render().asPng();
    writeFileSync(resolve(images,slug+'.png'),image);
   }
   writeFileSync(resolve(output,'sitemap.xml'),'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+projectRoutes().map(path=>'<url><loc>'+SITE_ORIGIN+path+'</loc></url>').join('')+'</urlset>');

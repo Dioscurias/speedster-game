@@ -2,6 +2,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 const base=process.env.TEST_URL||'http://127.0.0.1:5173',errors=[];
+async function neutralFrame(frame,label){const colored=await frame.locator('body').evaluate(body=>{const colored=value=>{const m=value.match(/^rgba?\(([^)]+)\)/);if(!m)return false;const [r,g,b]=m[1].split(',').map(Number);return Math.max(r,g,b)-Math.min(r,g,b)>1;};return [...body.querySelectorAll('*')].filter(node=>{const box=node.getBoundingClientRect(),style=getComputedStyle(node);return box.width&&box.height&&style.visibility!=='hidden'&&style.display!=='none';}).flatMap(node=>{const style=getComputedStyle(node);return ['color','backgroundColor','borderTopColor'].filter(key=>colored(style[key])).map(key=>node.tagName+'#'+node.id+':'+key+':'+style[key]);});});assert.deepEqual(colored,[],label+' UI is neutral');}
 async function enterAustin(page,name){const frame=page.frameLocator('#game-window');await frame.locator('#join-player-name').waitFor({timeout:90000});await frame.locator('#join-player-name').fill(name);await frame.locator('#manta-start:not([disabled])').click();}
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>errors.push(error.message));
@@ -14,11 +15,13 @@ try{
  }
  await page.setViewportSize({width:360,height:800});await page.click('#open-navigation');await page.locator('#navigation-dialog[open]').waitFor();await page.keyboard.press('Escape');assert.equal(await page.locator('#navigation-dialog').isVisible(),false);
  await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-site-desktop.png'});
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelectorAll('.pin-spacer').length===0&&getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>[...document.querySelectorAll('[data-reveal]')].every(n=>getComputedStyle(n).opacity==='1'));await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto(base+'/projects/speedster/play');
  await enterAustin(page,'Runner');
  const frame=page.frameLocator('#game-window');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
- assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
+ assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');
+ const liveTokens=await frame.locator('.manta-hud').evaluate(node=>{const style=getComputedStyle(node);return ['--bg','--fg','--muted','--line','--danger'].map(key=>style.getPropertyValue(key).trim().replace(/,0\./g,',.'));});assert.deepEqual(liveTokens,['#000000','#FFFFFF','rgba(255,255,255,.6)','rgba(255,255,255,.14)','#FFFFFF'],'late engine styles cannot override neutral HUD tokens');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
+ await neutralFrame(frame,'Austin');
  const collectionCount=await page.locator('#game-window').evaluate(f=>{const api=f.contentWindow.__velocity,read=api.getState;f.contentWindow.restoreHudReader=()=>api.getState=read;const count=read().collected+1;api.getState=()=>({...read(),collected:count});return count;});
  await page.waitForTimeout(150);assert.equal(Number(await frame.locator('[data-hud-bolts]').innerText()),collectionCount,'adapter maps collected to the Bolts readout');assert.equal(await frame.locator('.manta-hud').evaluate(n=>n.classList.contains('is-pickup')),true,'a collection flashes the ring');await page.locator('#game-window').evaluate(f=>f.contentWindow.restoreHudReader());
  async function layout(width,height){
@@ -39,13 +42,14 @@ try{
  assert.ok(Number(await frame.locator('[data-hud-speed]').innerText())>0,'speed reads the real engine');
  await frame.locator('#hud-quality').click();assert.equal(await frame.locator('#hud-quality').getAttribute('aria-checked'),'false');await frame.locator('#hud-quality').click();assert.equal(await frame.locator('#hud-quality').getAttribute('aria-checked'),'true');
  await frame.locator('#hud-fullscreen').click();await page.waitForFunction(()=>!!document.fullscreenElement);await page.evaluate(()=>document.exitFullscreen());
- await frame.locator('.manta-stage').press('Escape');await frame.locator('#result:not(.hidden)').waitFor();
+ await frame.locator('.manta-stage').press('Escape');await frame.locator('#result:not(.hidden)').waitFor();await neutralFrame(frame,'Austin pause');
  const before=await page.locator('#game-window').evaluate(f=>f.contentWindow.__velocity.getState());await page.waitForTimeout(200);assert.deepEqual(await page.locator('#game-window').evaluate(f=>f.contentWindow.__velocity.getState()),before,'pause freezes simulation');
  await frame.locator('#resume').click();await frame.locator('#hud-phase').hover();await page.mouse.down();await page.waitForTimeout(100);assert.equal(await page.locator('#game-window').evaluate(f=>f.contentWindow.__velocity.getState().phasing),true);await page.mouse.up();
- await frame.locator('#hud-guide').click();await frame.locator('#info-dialog[open]').waitFor();await page.keyboard.press('Escape');await frame.locator('#info-dialog').waitFor({state:'hidden'});
+ await frame.locator('#hud-guide').click();await frame.locator('#info-dialog[open]').waitFor();await neutralFrame(frame,'Guide');await page.keyboard.press('Escape');await frame.locator('#info-dialog').waitFor({state:'hidden'});
  await frame.locator('#hud-maps').click();await page.locator('#maps-dialog[open]').waitFor();await page.keyboard.press('Escape');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity.getState().status==='running');
  await frame.locator('#hud-pause').click();await frame.locator('#hud-maps').click();await page.getByRole('radio',{name:'The Last Household',exact:true}).check();await page.click('#launch-game');
  await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__parkour?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
+ await neutralFrame(frame,'Parkour');
  assert.equal(await frame.locator('[data-key-hint=e]').locator('..').innerText(),'E\nBlink');assert.equal(await frame.locator('[data-key-hint=f]').locator('..').innerText(),'F\nHand blast');
  for(const [w,h] of [[360,800],[844,390],[1440,900],[2560,1440]])await layout(w,h);
  await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-hud-parkour.png'});
@@ -55,7 +59,7 @@ try{
  const touch=await mobile.newPage();touch.on('pageerror',error=>errors.push(error.message));await touch.goto(base+'/projects/speedster/play');
  await enterAustin(touch,'Touch Runner');
  await touch.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});
- const touchFrame=touch.frameLocator('#game-window');assert.equal(await touchFrame.locator('.hud-keys').isVisible(),false);assert.equal(await touchFrame.locator('.manta-touch-controls').isVisible(),true);
+ const touchFrame=touch.frameLocator('#game-window');assert.equal(await touchFrame.locator('.hud-keys').isVisible(),false);assert.equal(await touchFrame.locator('.manta-touch-controls').isVisible(),true);await neutralFrame(touchFrame,'Austin touch');
  for(const [width,height] of [[360,800],[844,390]]){
   await touch.setViewportSize({width,height});await touch.waitForTimeout(200);
   const state=await touch.locator('#game-window').evaluate(f=>{
@@ -69,7 +73,7 @@ try{
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:pos.x+pos.width/2,y:pos.y+pos.height/2,id:1}]});await touch.waitForTimeout(300);
  assert.ok(await touch.locator('#game-window').evaluate(f=>f.contentWindow.__velocity.getState().speed)>.1,'touch moves the actual character');
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
- await mobile.close();
+ await touchFrame.locator('#hud-pause').click();await touchFrame.locator('#hud-maps').click();await touch.getByRole('radio',{name:'The Last Household',exact:true}).check();await touch.locator('#launch-game').click();await touch.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__parkour?.getState().status==='running',null,{timeout:90000});await neutralFrame(touchFrame,'Parkour touch');await mobile.close();
  // Exercise presentation states directly through the public HUD API in a source preview.
  const fixture=await browser.newPage(),source=await fixture.goto(base+'/src/hud/hud-overlay.html');
  if(source.status()===200&&await fixture.locator('.speedster-hud').count()){
@@ -78,7 +82,7 @@ try{
    const {mountMantaHUD}=await import('/src/hud/manta-hud.js');document.body.replaceChildren();window.hud=mountMantaHUD(document.body);
    window.hud.update({status:'running',health:24,energy:100,speed:900,topSpeed:910,distance:1200,bolts:3,heading:Math.PI/2},performance.now());
    const root=window.hud.element;return {health:getComputedStyle(root.querySelector('[data-hud-health-row]')).color,speed:root.style.getPropertyValue('--speed'),energy:root.style.getPropertyValue('--energy'),heading:root.querySelector('[data-hud-heading]').textContent,fast:root.classList.contains('is-fast'),pulse:getComputedStyle(root.querySelector('.ring-energy')).animationName};
-  });assert.equal(behavior.health,'rgb(255, 90, 54)');assert.equal(behavior.energy,'1');assert.equal(behavior.heading,'E 90°');assert.equal(behavior.fast,true);assert.ok(Number(behavior.speed)>.9);assert.equal(behavior.pulse,'energy-breathe');
+  });assert.equal(behavior.health,'rgb(255, 255, 255)');assert.equal(behavior.energy,'1');assert.equal(behavior.heading,'E 90°');assert.equal(behavior.fast,true);assert.ok(Number(behavior.speed)>.9);assert.equal(behavior.pulse,'energy-breathe');
   await fixture.emulateMedia({reducedMotion:'reduce'});assert.equal(await fixture.locator('.ring-energy').evaluate(n=>getComputedStyle(n).animationName),'none');await fixture.evaluate(()=>window.hud.destroy());
  }
  await fixture.close();

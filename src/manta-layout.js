@@ -109,6 +109,6 @@ function drawCourseRadar(canvas,state){
  if(canvas.width!==metrics.backingSize)canvas.width=canvas.height=metrics.backingSize;
  const ctx=canvas.getContext('2d');ctx.setTransform(metrics.backingSize/size,0,0,metrics.backingSize/size,0,0);ctx.clearRect(0,0,size,size);ctx.save();ctx.beginPath();ctx.arc(center,center,center,0,Math.PI*2);ctx.clip();
  ctx.translate(center,center);ctx.rotate(-state.heading);ctx.scale(scale,scale);ctx.translate(-state.x,-state.z);
- const platforms=window.__parkour?.getPlatforms()||[];ctx.strokeStyle='#bfe6ff60';ctx.lineWidth=1/scale;ctx.beginPath();platforms.forEach((p,i)=>i?ctx.lineTo(p.x||0,p.z):ctx.moveTo(p.x||0,p.z));ctx.stroke();
- for(const p of platforms){if(p.active===false)continue;ctx.save();ctx.translate(p.x||0,p.z);ctx.rotate(p.angle||0);ctx.fillStyle='#bfe6ff80';ctx.fillRect(-p.width/2,-p.depth/2,p.width,p.depth);ctx.restore();}ctx.restore();
+ const platforms=window.__parkour?.getPlatforms()||[];ctx.strokeStyle='#ffffff60';ctx.lineWidth=1/scale;ctx.beginPath();platforms.forEach((p,i)=>i?ctx.lineTo(p.x||0,p.z):ctx.moveTo(p.x||0,p.z));ctx.stroke();
+ for(const p of platforms){if(p.active===false)continue;ctx.save();ctx.translate(p.x||0,p.z);ctx.rotate(p.angle||0);ctx.fillStyle='#ffffff80';ctx.fillRect(-p.width/2,-p.depth/2,p.width,p.depth);ctx.restore();}ctx.restore();
 }

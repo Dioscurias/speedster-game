@@ -9,7 +9,7 @@ const params=new URLSearchParams(location.search);
 const embedded=location.pathname.replace(/\/$/,'')===GAME_PATH&&params.get('embed')==='1';
 if(embedded){document.body.className='';document.body.innerHTML=gameShell;}
 const cover=document.createElement('div');cover.className='manta-loading';cover.setAttribute('role','status');
-cover.innerHTML=(embedded?'':brandSprite())+'<div class="loading-symbol"><svg class="loading-ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" pathLength="100"/></svg>'+(embedded?'':manta('loading-manta'))+'</div><span class="loading-wordmark">'+(embedded?'SPEEDSTER':'MANTA RAY')+'</span><p>Loading…</p>';
+cover.innerHTML=(embedded?'':brandSprite()+manta('loading-manta'))+'<span class="loading-wordmark">'+(embedded?'SPEEDSTER':'MANTA RAY')+'</span><p>Loading</p>';
 document.body.append(cover);
 const observer=new MutationObserver(()=>{if(!cover.isConnected)document.body.append(cover);});observer.observe(document.body,{childList:true});
 try{
