@@ -1,7 +1,7 @@
 import {icon} from './icons.js';
 import {manta,brand} from './brand.js';
 export {icon} from './icons.js';
-export {mantaPath,brandSprite,manta,brand} from './brand.js';
+export {mantaLogoURL,mantaViewBox,mantaArtwork,brandSprite,manta,brand} from './brand.js';
 export function button(label,{id='',href='',ghost=false,attrs=''}={}){
  const tag=href?'a':'button';return `<${tag} ${id?`id="${id}"`:''} ${href?`href="${href}"`:'type="button"'} class="mr-btn${ghost?' mr-btn--ghost':''}" ${attrs}><span>${label}</span><span class="mr-arrow" aria-hidden="true">${icon('arrow')}${icon('arrow')}</span></${tag}>`;
 }

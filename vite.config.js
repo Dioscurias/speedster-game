@@ -20,8 +20,9 @@ export default defineConfig({plugins:[{
   }
   writeFileSync(resolve(output,'404.html'),documentFor(template,'/404'));
   const images=resolve(output,'og');mkdirSync(images,{recursive:true});
+  const logoDataURI='data:image/png;base64,'+readFileSync(resolve('public/brand/manta-ray.png')).toString('base64');
   for(const {slug,project} of socialImages()){
-   const svg=ogSVG(project);
+   const svg=ogSVG(project,logoDataURI);
    const image=new Resvg(svg,{font:{loadSystemFonts:false,fontFiles:[resolve('public/fonts/barlow-condensed-600.ttf'),resolve('public/fonts/barlow-condensed-700.ttf'),resolve('scripts/fonts/jetbrains-mono-regular.ttf'),resolve('scripts/fonts/inter-variable.ttf')],defaultFontFamily:'Inter'}}).render().asPng();
    writeFileSync(resolve(images,slug+'.png'),image);
   }

@@ -1,5 +1,10 @@
-// Replace this one placeholder symbol with your final logo. All inline marks use it.
-export const mantaPath='M48 9C38 18 26 15 3 7c4 16 13 28 31 30l11-7 3 13 3-13 11 7c18-2 27-14 31-30-23 8-35 11-45 2ZM47 32c-1 11-5 19-1 26 0-8 4-11 4-24Z';
-export function brandSprite(){return `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden"><symbol id="manta" viewBox="0 0 96 60"><path fill="currentColor" d="${mantaPath}"/></symbol></svg>`;}
-export function manta(className=''){return `<svg class="manta-mark ${className}" viewBox="0 0 96 60" aria-hidden="true" fill="currentColor"><use href="#manta"/></svg>`;}
+// The supplied artwork is stored unchanged. A luminance mask removes its black
+// backdrop at render time and lets every mark inherit the existing color tokens.
+export const mantaLogoURL='/brand/manta-ray.png';
+export const mantaViewBox='64 144 1436 696';
+export function mantaArtwork(imageURL=mantaLogoURL,maskId='manta-artwork'){
+ return `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="64" y="144" width="1436" height="696" mask-type="luminance"><image href="${imageURL}" x="0" y="0" width="1536" height="1024"/></mask></defs><rect x="64" y="144" width="1436" height="696" fill="currentColor" mask="url(#${maskId})"/>`;
+}
+export function brandSprite(){return `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden"><symbol id="manta" viewBox="${mantaViewBox}">${mantaArtwork()}</symbol></svg>`;}
+export function manta(className=''){return `<svg class="manta-mark ${className}" viewBox="0 0 1436 696" aria-hidden="true" fill="currentColor"><use href="#manta" width="1436" height="696"/></svg>`;}
 export function brand(){return `${manta()}<span class="mr-wordmark">MANTA RAY</span>`;}

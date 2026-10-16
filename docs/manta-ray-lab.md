@@ -10,7 +10,7 @@ Manta Ray is the lab. Speedster is MR-001, one project in its index. The existin
 
 ## 2. Shared components
 
-- `src/ui/brand.js`: one manta silhouette and symbol, shared by lab pages, loading and the OG template. The existing `public/manta.svg` remains the favicon.
+- `src/ui/brand.js`: the supplied manta artwork in `public/brand/manta-ray.png`, shared by lab pages, loading and the OG template through a luminance mask. The same unchanged PNG is the favicon. The viewBox trims the surrounding empty space without editing the source image.
 - `src/ui/icons.js`: the existing Phosphor SVG markup, now usable by the browser and static renderer.
 - `src/ui/components.js`: Button, Segmented, Keycap, SpeedRing, Minimap wrapper, Header and Dialog. The header links to Projects, About, Contact and the Speedster play page.
 
