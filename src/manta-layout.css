@@ -28,6 +28,8 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
 .manta-game .map-legend,.manta-game .map-legend span{color:var(--muted)!important}
 .manta-game button:focus-visible,.manta-game a:focus-visible,.manta-game input:focus-visible{outline:2px solid var(--blue-hi);outline-offset:4px}
 .manta-game .manta-touch-controls{display:none}
+.manta-game .heading-marker{width:32px;height:26px;fill:currentColor}
+.manta-game .speedster-wordmark{font:700 24px var(--display);letter-spacing:.12em}
 .manta-loading{position:absolute;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--ink);font:12px var(--body)}
 .loading-symbol{position:relative;width:120px;height:120px;margin-bottom:18px}.loading-ring{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--blue-hi);stroke-width:.6;stroke-dasharray:100;animation:loading-draw 2.6s ease-in-out infinite}.loading-manta{position:absolute;left:30px;top:40px;width:60px;height:40px;animation:manta-glide 2.6s ease-in-out infinite}.loading-wordmark{font:600 28px var(--display);letter-spacing:.16em}.manta-loading p{font:10px var(--body);color:var(--muted);margin:0 0 22px}.manta-loading .mr-btn{min-width:175px}
 @keyframes loading-draw{0%{stroke-dashoffset:100;opacity:.3}70%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:-100;opacity:.3}}

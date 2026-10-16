@@ -12,9 +12,10 @@ try{
  }
  await page.setViewportSize({width:360,height:800});await page.click('#open-navigation');await page.locator('#navigation-dialog[open]').waitFor();await page.keyboard.press('Escape');assert.equal(await page.locator('#navigation-dialog').isVisible(),false);
  await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-site-desktop.png'});
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');assert.equal(await page.locator('[data-step-index="0"]').evaluate(n=>n.onclick===null),true,'reduced motion clears pinned navigation handlers');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
- await page.locator('.site-header [data-open-maps]').click();await page.getByRole('radio',{name:'Austin',exact:true}).check();await page.click('#launch-game');
+ await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');assert.equal(await page.locator('.pin-spacer').count(),0,'reduced motion removes the featured pin');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.goto(base+'/projects/speedster/play');
  const frame=page.frameLocator('#game-window');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
+ assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
  const collectionCount=await page.locator('#game-window').evaluate(f=>{const api=f.contentWindow.__velocity,read=api.getState;f.contentWindow.restoreHudReader=()=>api.getState=read;const count=read().collected+1;api.getState=()=>({...read(),collected:count});return count;});
  await page.waitForTimeout(150);assert.equal(Number(await frame.locator('[data-hud-bolts]').innerText()),collectionCount,'adapter maps collected to the Bolts readout');assert.equal(await frame.locator('.manta-hud').evaluate(n=>n.classList.contains('is-pickup')),true,'a collection flashes the ring');await page.locator('#game-window').evaluate(f=>f.contentWindow.restoreHudReader());
  async function layout(width,height){
@@ -48,7 +49,7 @@ try{
  await frame.locator('#hud-guide').click();await page.keyboard.press('Escape');await frame.locator('#play').click();await frame.locator('.manta-stage').focus();await page.keyboard.down('f');await page.waitForTimeout(150);assert.equal(await frame.locator('#aim-reticle').isVisible(),false);await page.keyboard.up('f');
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await frame.locator('.ring-energy').evaluate(n=>getComputedStyle(n).animationName),'none');
  const mobile=await browser.newContext({viewport:{width:360,height:800},isMobile:true,hasTouch:true,deviceScaleFactor:3});
- const touch=await mobile.newPage();touch.on('pageerror',error=>errors.push(error.message));await touch.goto(base);await touch.locator('.site-header [data-open-maps]').tap();await touch.click('#launch-game');
+ const touch=await mobile.newPage();touch.on('pageerror',error=>errors.push(error.message));await touch.goto(base+'/projects/speedster/play');
  await touch.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});
  const touchFrame=touch.frameLocator('#game-window');assert.equal(await touchFrame.locator('.hud-keys').isVisible(),false);assert.equal(await touchFrame.locator('.manta-touch-controls').isVisible(),true);
  for(const [width,height] of [[360,800],[844,390]]){

@@ -1,15 +1,15 @@
-import {brandSprite,icon,keycap,minimap,segmented,speedRing} from '../ui/components.js';
+import {headingMarker,icon,keycap,minimap,segmented,speedRing} from '../ui/components.js';
 import {controlHints,hudView} from './hud-model.js';
 import {HudFeed} from './hud-overlay.js';
 import './manta-hud.css';
 
 export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
  const root=document.createElement('div');root.className='manta-hud speedster-hud';root.setAttribute('aria-label','Game status');
- root.innerHTML=`${brandSprite()}<div class="hud-scrim hud-scrim-top" aria-hidden="true"></div><div class="hud-scrim hud-scrim-bottom" aria-hidden="true"></div><div class="hud-speed-edges" aria-hidden="true"></div>
+ root.innerHTML=`<div class="hud-scrim hud-scrim-top" aria-hidden="true"></div><div class="hud-scrim hud-scrim-bottom" aria-hidden="true"></div><div class="hud-speed-edges" aria-hidden="true"></div>
  <section class="hud-identity hud-surface" data-hud-region="identity" aria-label="Location and health"><div class="hud-location"><strong data-hud-map>${parkour?'The Last Household':'Austin'}</strong><span class="hud-location-separator">/</span><span data-hud-street>${parkour?'Salt Steps':'Congress Avenue'}</span></div><div class="hud-connection"><i data-hud-connection-dot></i><span data-hud-connection>Connecting</span><span class="hud-player-count"><b data-hud-players>1</b> <span data-hud-player-label>player</span></span></div><div class="hud-health-row" data-hud-health-row><span class="hud-label">Health</span><div class="hud-health-meter" data-hud-health-meter role="progressbar" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i data-hud-health-fill></i></div><strong data-hud-health>100</strong></div></section>
- ${minimap()}
+ ${minimap(headingMarker())}
  <ol class="hud-events" data-hud-events role="log" aria-label="Game events" aria-live="polite"></ol>
- ${speedRing()}
+ ${speedRing('SPEEDSTER / VELOCITY')}
  <dl class="hud-stats hud-surface" data-hud-region="stats"><div><dt>Distance</dt><dd><strong data-hud-distance>0</strong><span data-hud-distance-unit>m</span></dd></div><div><dt>Bolts</dt><dd><strong data-hud-bolts>0</strong></dd></div><div><dt>Braking</dt><dd><strong data-hud-braking>${parkour?'—':'0'}</strong><span data-hud-braking-unit>${parkour?'':'m'}</span></dd></div></dl>
  <div class="hud-keys" data-hud-region="keys" aria-label="Controls">${controlHints(parkour).map(hint=>`<span class="hud-key-hint">${keycap(hint.key,hint.display)}<span>${icon(hint.icon)}${hint.label}</span></span>`).join('')}</div>`;
  parent.append(root);const get=name=>root.querySelector(`[data-hud-${name}]`),feed=new HudFeed(),eventNodes=new Map(),reduced=matchMedia('(prefers-reduced-motion: reduce)');

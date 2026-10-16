@@ -7,10 +7,12 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
+  "cleanUrls": true,
+  "redirects": [
     {
       "source": "/play",
-      "destination": "/index.html"
+      "destination": "/projects/speedster/play",
+      "permanent": false
     }
   ]
 }
