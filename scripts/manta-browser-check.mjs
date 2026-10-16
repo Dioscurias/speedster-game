@@ -12,7 +12,7 @@ try{
  }
  await page.setViewportSize({width:360,height:800});await page.click('#open-navigation');await page.locator('#navigation-dialog[open]').waitFor();await page.keyboard.press('Escape');assert.equal(await page.locator('#navigation-dialog').isVisible(),false);
  await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-site-desktop.png'});
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');assert.equal(await page.locator('.pin-spacer').count(),0,'reduced motion removes the featured pin');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelectorAll('.pin-spacer').length===0&&getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto(base+'/projects/speedster/play');
  const frame=page.frameLocator('#game-window');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
  assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
