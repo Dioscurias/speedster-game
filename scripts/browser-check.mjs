@@ -12,7 +12,7 @@ try{
  await page.keyboard.down('q');await page.waitForFunction(()=>window.__velocity.getState().phasing);const phaseEffects=await page.evaluate(()=>window.__velocity.getEffects());await page.waitForTimeout(90);assert.notDeepEqual((await page.evaluate(()=>window.__velocity.getEffects())).vibration,phaseEffects.vibration);assert.equal((await state()).distance,0,'vibration does not move collision body');assert.ok(phaseEffects.lightning.visible);assert.equal(await page.locator('#phase').getAttribute('aria-pressed'),'true');await page.keyboard.up('q');await page.waitForFunction(()=>!window.__velocity.getState().phasing);
  const phaseButton=await page.locator('#phase').boundingBox();await page.mouse.move(phaseButton.x+10,phaseButton.y+10);await page.mouse.down();await page.waitForFunction(()=>window.__velocity.getState().phasing);await page.mouse.up();await page.waitForFunction(()=>!window.__velocity.getState().phasing);
  const wallCheck=await page.evaluate(async()=>{
-  const {createWorld,stepWorld}=await import('/src/game.js'),{prepareMap}=await import('/src/austin.js');const map=prepareMap(await (await fetch('/assets/austin/map.json')).json());
+  const {createWorld,stepWorld}=await import('/speedster/src/game.js'),{prepareMap}=await import('/speedster/src/austin.js');const map=prepareMap(await (await fetch('/assets/austin/map.json')).json());
   for(const b of map.buildings)for(let i=0;i<b.polygon.length;i++){
    const a=b.polygon[i],c=b.polygon[(i+1)%b.polygon.length],len=Math.hypot(c[0]-a[0],c[1]-a[1]);if(len<8)continue;
    for(const sign of [-1,1]){const nx=sign*(c[1]-a[1])/len,nz=-sign*(c[0]-a[0])/len,x=(a[0]+c[0])/2+nx*2,z=(a[1]+c[1])/2+nz*2;if(map.collider.blocked(x,z,1))continue;

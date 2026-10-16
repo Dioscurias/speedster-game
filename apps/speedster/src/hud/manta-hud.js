@@ -1,4 +1,4 @@
-import {headingMarker,icon,keycap,minimap,segmented,speedRing} from '../ui/components.js';
+import {headingMarker,icon,keycap,minimap,segmented,speedRing} from '../../../../packages/ui/components.js';
 import {controlHints,hudView} from './hud-model.js';
 import {HudFeed} from './hud-overlay.js';
 import './manta-hud.css';

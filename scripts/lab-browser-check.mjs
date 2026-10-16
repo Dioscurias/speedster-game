@@ -1,6 +1,6 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
-import {projects} from '../src/data/projects.ts';
+import {projects} from '../apps/manta/src/data/projects.ts';
 const base=process.env.TEST_URL||'http://127.0.0.1:5190',errors=[];
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 try{

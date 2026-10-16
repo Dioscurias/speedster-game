@@ -1,6 +1,6 @@
-import './ui/tokens.css';
+import '../../../packages/ui/tokens.css';
 import './manta-layout.css';
-import {icon,button,dialog,wireDialog} from './ui/components.js';
+import {icon,button,dialog,wireDialog} from '../../../packages/ui/components.js';
 import {mountMantaHUD} from './hud/manta-hud.js';
 import {minimapMetrics} from './minimap.js';
 import {PLAYER_NAME_MAX,readPlayerName,savePlayerName} from './player-profile.js';
@@ -49,8 +49,8 @@ export function mountGameLayout(parkour,autoplay){
  const resumeButton=$(parkour?'play':'resume'),restart=$('restart');resumeButton.classList.add('mr-btn');restart.classList.add('mr-menu-text');
  const restartGame=restart.onclick;restart.onclick=()=>{hud.reset();restartGame();};
  const menuActions=document.createElement('div');menuActions.className='manta-menu-actions';menuActions.innerHTML=button('Change map',{id:'hud-maps',ghost:true})+button('Leave game',{id:'hud-leave',ghost:true});menuCard.append(menuActions);
- $('hud-maps').onclick=()=>{pause();if(window.parent!==window)window.parent.postMessage({type:'speedster:maps'},location.origin);else location.href='/play';};
- $('hud-leave').onclick=()=>{if(window.parent!==window)window.parent.postMessage({type:'manta:leave'},location.origin);else location.href='/';};
+ $('hud-maps').onclick=()=>{pause();if(window.parent!==window)window.parent.postMessage({type:'speedster:maps'},location.origin);else window.dispatchEvent(new Event('speedster:maps'));};
+ $('hud-leave').onclick=()=>{if(window.parent!==window)window.parent.postMessage({type:'manta:leave'},location.origin);else location.assign(location.pathname);};
  if(!parkour){
   const rename=document.createElement('button');rename.type='button';rename.id='hud-player-name';rename.className='mr-menu-text';rename.textContent='Player name';menuCard.insertBefore(rename,menuActions);
   rename.onclick=()=>{

@@ -1,6 +1,6 @@
 import {projects} from '../data/projects.ts';
 import {resolveRoute,escapeHTML as e} from './project-model.js';
-import {mantaArtwork,mantaViewBox,mantaLogoURL} from '../ui/brand.js';
+import {mantaArtwork,mantaViewBox,mantaLogoURL} from '../../../../packages/ui/brand.js';
 export const SITE_ORIGIN='https://speedster-game.vercel.app';
 export const organization={'@context':'https://schema.org','@type':'Organization',name:'Manta Ray'};
 export function pageSEO(path){

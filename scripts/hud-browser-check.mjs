@@ -5,11 +5,11 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));const base=process.env.TEST_URL||'http://127.0.0.1:5173';
  // Check the reusable component without any game engine or update loop.
- const source=await page.goto(base+'/src/hud/hud-overlay.html');
+ const source=await page.goto(base+'/speedster/src/hud/hud-overlay.html');
  if(source.status()===200&&await page.locator('.speedster-hud').count()){
- await page.addStyleTag({url:base+'/src/hud/hud-overlay.css'});
+ await page.addStyleTag({url:base+'/speedster/src/hud/hud-overlay.css'});
  const standalone=await page.evaluate(async()=>{
-  const {createSpeedsterHUD}=await import('/src/hud/hud-overlay.js');window.hud=createSpeedsterHUD(document.querySelector('.speedster-hud'));
+  const {createSpeedsterHUD}=await import('/speedster/src/hud/hud-overlay.js');window.hud=createSpeedsterHUD(document.querySelector('.speedster-hud'));
   window.hud.update({health:25,energy:100,speed:700,topSpeed:900,distance:1200,bolts:3});
   const root=document.querySelector('.speedster-hud'),row=root.querySelector('[data-hud-health-row]'),at25=row.classList.contains('is-low');
   window.hud.update({health:24});window.hud.event('<img src=x onerror=alert(1)>');

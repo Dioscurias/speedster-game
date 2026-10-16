@@ -1,5 +1,5 @@
 import {escapeHTML as e,safeURL,nextProject} from './project-model.js';
-import {icon,button,manta} from '../ui/components.js';
+import {icon,button,manta} from '../../../../packages/ui/components.js';
 
 export function StatusChip(status){return status?`<span class="status-chip status-${e(status.toLowerCase())}">${status==='Live'?'<i aria-hidden="true"></i>':''}${e(status)}</span>`:'';}
 export function SpecimenFrame(project,{className='',eager=false}={}){

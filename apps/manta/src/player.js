@@ -1,6 +1,6 @@
-import {maps} from './maps.js';
-import {GAME_PATH} from '../lab/project-model.js';
-import {wireDialog} from '../ui/components.js';
+import {maps} from '../../../packages/game-bridge/maps.js';
+import {GAME_PATH,gameURL} from '../../../packages/game-bridge/index.js';
+import {wireDialog} from '../../../packages/ui/components.js';
 
 export function mountPlayer(motion){
  const $=id=>document.getElementById(id),dialog=$('maps-dialog');wireDialog(dialog);
@@ -9,7 +9,7 @@ export function mountPlayer(motion){
  select(selected.id);
  function launch(){
   launching=true;if(dialog.open)dialog.close();returnToGame=false;motion.stop();$('player').hidden=false;document.body.classList.add('playing-game');
-  const frame=document.createElement('iframe');frame.id='game-window';frame.title=`Speedster / ${selected.name}`;frame.allow='fullscreen';frame.allowFullscreen=true;frame.src=`${GAME_PATH}?embed=1&map=${selected.id}&autoplay=1`;
+  const frame=document.createElement('iframe');frame.id='game-window';frame.title=`Speedster / ${selected.name}`;frame.allow='fullscreen';frame.allowFullscreen=true;frame.src=gameURL({map:selected.id,autoplay:true});
   $('frame-slot').replaceChildren(frame);history.replaceState(null,'',`${GAME_PATH}?map=${selected.id}`);frame.onload=()=>frame.focus();launching=false;
  }
  async function openMaps(){if(document.fullscreenElement)await document.exitFullscreen();returnToGame=true;motion.stop();dialog.showModal();}

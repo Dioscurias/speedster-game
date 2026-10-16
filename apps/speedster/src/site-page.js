@@ -1,7 +1,7 @@
-import './ui/tokens.css';
+import '../../../packages/ui/tokens.css';
 import './site-page.css';
-import {brandSprite,brand,manta,icon,button,header,dialog,wireDialog} from './ui/components.js';
-import {mountSiteMotion} from './ui/site-motion.js';
+import {brandSprite,brand,manta,icon,button,header,dialog,wireDialog} from '../../../packages/ui/components.js';
+import {mountSiteMotion} from '../../../packages/ui/site-motion.js';
 
 export const maps=[
  {id:'austin',name:'Austin',mode:'Multiplayer',kind:'City / Free roam',hint:'Downtown streets. Rooftops. Room to run.',image:'/assets/previews/austin.jpg'},

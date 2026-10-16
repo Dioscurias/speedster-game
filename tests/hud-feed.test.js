@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {HudFeed} from '../src/hud/hud-overlay.js';
+import {HudFeed} from '../apps/speedster/src/hud/hud-overlay.js';
 
 test('rapid speed records coalesce rather than flooding the event feed',()=>{
  const feed=new HudFeed();feed.push('New top speed · 120 KM/H',0,'speed');feed.push('New top speed · 300 KM/H',100,'speed');

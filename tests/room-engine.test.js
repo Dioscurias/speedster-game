@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRoomEngine} from '../src/room-engine.js';
+import {createRoomEngine} from '../apps/speedster/src/room-engine.js';
 
 const state=(x,vx=0)=>({x,z:0,y:0,vx,vz:0,heading:0,phasing:false});
 

@@ -20,7 +20,7 @@ try{
  await enterAustin(page,'Runner');
  const frame=page.frameLocator('#game-window');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
  assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');
- const liveTokens=await frame.locator('.manta-hud').evaluate(node=>{const style=getComputedStyle(node);return ['--bg','--fg','--muted','--line','--danger'].map(key=>style.getPropertyValue(key).trim().replace(/,0\./g,',.'));});assert.deepEqual(liveTokens,['#000000','#FFFFFF','rgba(255,255,255,.6)','rgba(255,255,255,.14)','#FFFFFF'],'late engine styles cannot override neutral HUD tokens');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
+ const liveTokens=await frame.locator('.manta-hud').evaluate(node=>{const style=getComputedStyle(node);return ['--bg','--fg','--muted','--line','--danger'].map(key=>style.getPropertyValue(key).trim().replace(/,0\./g,',.'));});assert.deepEqual(liveTokens,['#000000','#FFFFFF','rgba(255,255,255,.6)','rgba(255,255,255,.14)','#FFFFFF'],'late engine styles cannot override neutral HUD tokens');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/speedster/');
  await neutralFrame(frame,'Austin');
  const collectionCount=await page.locator('#game-window').evaluate(f=>{const api=f.contentWindow.__velocity,read=api.getState;f.contentWindow.restoreHudReader=()=>api.getState=read;const count=read().collected+1;api.getState=()=>({...read(),collected:count});return count;});
  await page.waitForTimeout(150);assert.equal(Number(await frame.locator('[data-hud-bolts]').innerText()),collectionCount,'adapter maps collected to the Bolts readout');assert.equal(await frame.locator('.manta-hud').evaluate(n=>n.classList.contains('is-pickup')),true,'a collection flashes the ring');await page.locator('#game-window').evaluate(f=>f.contentWindow.restoreHudReader());
@@ -75,11 +75,11 @@ try{
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await touchFrame.locator('#hud-pause').click();await touchFrame.locator('#hud-maps').click();await touch.getByRole('radio',{name:'The Last Household',exact:true}).check();await touch.locator('#launch-game').click();await touch.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__parkour?.getState().status==='running',null,{timeout:90000});await neutralFrame(touchFrame,'Parkour touch');await mobile.close();
  // Exercise presentation states directly through the public HUD API in a source preview.
- const fixture=await browser.newPage(),source=await fixture.goto(base+'/src/hud/hud-overlay.html');
+ const fixture=await browser.newPage(),source=await fixture.goto(base+'/speedster/src/hud/hud-overlay.html');
  if(source.status()===200&&await fixture.locator('.speedster-hud').count()){
-  await fixture.addStyleTag({url:base+'/src/ui/tokens.css'});
+  await fixture.addStyleTag({url:base+'/shared-ui/tokens.css'});
   const behavior=await fixture.evaluate(async()=>{
-   const {mountMantaHUD}=await import('/src/hud/manta-hud.js');document.body.replaceChildren();window.hud=mountMantaHUD(document.body);
+   const {mountMantaHUD}=await import('/speedster/src/hud/manta-hud.js');document.body.replaceChildren();window.hud=mountMantaHUD(document.body);
    window.hud.update({status:'running',health:24,energy:100,speed:900,topSpeed:910,distance:1200,bolts:3,heading:Math.PI/2},performance.now());
    const root=window.hud.element;return {health:getComputedStyle(root.querySelector('[data-hud-health-row]')).color,speed:root.style.getPropertyValue('--speed'),energy:root.style.getPropertyValue('--energy'),heading:root.querySelector('[data-hud-heading]').textContent,fast:root.classList.contains('is-fast'),pulse:getComputedStyle(root.querySelector('.ring-energy')).animationName};
   });assert.equal(behavior.health,'rgb(255, 255, 255)');assert.equal(behavior.energy,'1');assert.equal(behavior.heading,'E 90°');assert.equal(behavior.fast,true);assert.ok(Number(behavior.speed)>.9);assert.equal(behavior.pulse,'energy-breathe');

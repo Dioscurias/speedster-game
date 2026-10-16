@@ -1,0 +1,10 @@
+{
+  "name": "@manta-ray/manta",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --mode standalone",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  }
+}

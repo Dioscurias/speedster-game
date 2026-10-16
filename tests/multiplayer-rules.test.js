@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {crashDamage, resolvePlayerUpdate, sanitizeSnapshot, RESPAWN_MS} from '../src/multiplayer-rules.js';
+import {crashDamage, resolvePlayerUpdate, sanitizeSnapshot, RESPAWN_MS} from '../apps/speedster/src/multiplayer-rules.js';
 
 test('crash damage rises with closing speed',()=>{
   assert.equal(crashDamage({x:0,z:0,vx:20,vz:0},{x:1,z:0,vx:-20,vz:0}),44);

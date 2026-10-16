@@ -1,0 +1,2 @@
+.manta-loading{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);color:var(--fg);font:12px var(--body)}
+.manta-loading>.loading-manta{position:static;width:120px;height:auto;animation:none;margin-bottom:24px}.loading-wordmark{font:600 28px var(--display);letter-spacing:.08em}.manta-loading p{font:11px var(--body);color:var(--muted);margin:0 0 22px}

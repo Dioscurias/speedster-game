@@ -1,14 +1,20 @@
 {
-  "name": "speedster-game",
+  "name": "manta-ray-workspace",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "node scripts/build-apps.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node scripts/lab-browser-check.mjs"
+    "test:browser": "node scripts/lab-browser-check.mjs",
+    "dev:manta": "vite --config apps/manta/vite.config.js --mode standalone --host 0.0.0.0",
+    "dev:speedster": "vite --config apps/speedster/vite.config.js --host 0.0.0.0",
+    "build:manta": "vite build --config apps/manta/vite.config.js",
+    "build:speedster": "vite build --config apps/speedster/vite.config.js",
+    "preview:manta": "vite preview --config apps/manta/vite.config.js --host 0.0.0.0",
+    "preview:speedster": "vite preview --config apps/speedster/vite.config.js --host 0.0.0.0"
   },
   "dependencies": {
     "@phosphor-icons/core": "^2.1.1",
@@ -20,5 +26,9 @@
     "@playwright/test": "^1.55.0",
     "@resvg/resvg-js": "^2.6.2",
     "vite": "^7.1.7"
-  }
+  },
+  "workspaces": [
+    "apps/manta",
+    "apps/speedster"
+  ]
 }

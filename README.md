@@ -1,3 +1,33 @@
+# Manta Ray and Speedster
+
+Two applications share this repository. Manta Ray is the lab site. Speedster is the game linked from the lab.
+
+- `apps/manta/`: site pages, project data, logo, opening film, and promotional media.
+- `apps/speedster/`: game entry, both maps, HUD, physics, models, textures, city data, and multiplayer API.
+- `packages/ui/`: shared tokens, controls, icons, and fonts.
+- `packages/game-bridge/`: route constants, map metadata, and the map picker.
+- `api/room.js`: deployment adapter for Speedster’s API.
+
+Run `npm install` from the repository root.
+
+| Command | Result |
+| --- | --- |
+| `npm run dev` | Both apps on one development origin |
+| `npm run dev:manta` | Manta site only |
+| `npm run dev:speedster` | Standalone game on port 5174 |
+| `npm run build` | Combined deployment in `dist/` |
+| `npm run build:manta` | Independent site build in `apps/manta/dist/` |
+| `npm run build:speedster` | Independent game build in `apps/speedster/dist/` |
+| `npm run preview` | Preview the combined deployment |
+| `npm run preview:manta` | Preview the independent site build |
+| `npm run preview:speedster` | Preview the independent game build |
+
+The lab routes remain `/`, `/projects`, `/projects/[slug]`, `/about`, and `/#contact`. Manta’s Play links still use `/projects/speedster/play`. That page embeds the separate game at `/speedster/`. Legacy `?embed=1` links redirect to the new entry.
+
+The standalone Manta build expects Speedster at `/speedster/` when its Play page is used. The combined dev and build commands perform that composition. The standalone game includes its own map picker; multiplayer requires `/api/room` on its hosting origin.
+
+## Existing gameplay notes
+
 # Speedster Game — Austin Multiplayer
 
 Free-roam exploration of downtown Austin using locally bundled OpenStreetMap streets, building footprints, parks and Lady Bird Lake shoreline. The playable extract is approximately 1.6 × 2.4 km (30.259–30.281 N, -97.752–-97.735 W). Spawn is on Congress Avenue near Sixth Street.
@@ -52,7 +82,7 @@ With the dev server running, install Playwright Chromium (`npx playwright instal
 - Asphalt and concrete textures: Poly Haven, CC0.
 - Streets, buildings, water and parks: © OpenStreetMap contributors, ODbL 1.0.
 
-See `public/assets/CREDITS.md`. The raw OSM snapshot, lake relation, and derived map are included in `public/assets/austin/`. Rebuild the derived JSON with:
+See `apps/speedster/public/assets/CREDITS.md`. The raw OSM snapshot, lake relation, and derived map are included in `apps/speedster/public/assets/austin/`. Rebuild the derived JSON with:
 
 ```sh
 python3 scripts/prepare-austin.py public/assets/austin/osm-source.osm public/assets/austin/lady-bird-lake.osm
@@ -66,10 +96,10 @@ Hold **Q** or the on-screen **Q · PHASE** button to pass through buildings and 
 Jump toward a building at speed and keep pressing toward it to run up its wall. **Space** pushes away. Reach the top to run onto the roof; stepping off resumes gravity. Wall running uses the running animation with the character oriented against the wall.
 
 ### Superhero visuals
-The active character is Quaternius’s CC0 Superhero Male, wearing a custom red-and-gold speedster suit, with compatible Idle/Walk/Sprint clips. Hold Q to visibly vibrate and shimmer. Branching lightning attaches to animated hands, feet and torso; its short fading wake follows the actual path through turns, jumps and wall runs. Effects use simulation time and freeze when paused. Asset sources and licenses are listed in `public/assets/CREDITS.md`.
+The active character is Quaternius’s CC0 Superhero Male, wearing a custom red-and-gold speedster suit, with compatible Idle/Walk/Sprint clips. Hold Q to visibly vibrate and shimmer. Branching lightning attaches to animated hands, feet and torso; its short fading wake follows the actual path through turns, jumps and wall runs. Effects use simulation time and freeze when paused. Asset sources and licenses are listed in `apps/speedster/public/assets/CREDITS.md`.
 
 ### Responsive physics and detailed Austin streets
-Steering now separates finite turning speed from forward acceleration: a 90-degree turn settles in roughly 0.2 seconds on pavement. Braking, reversal, air control, grip, step height, jump buffering and ledge grace are centralized in `PHYSICS` in `src/game.js`. Releasing boost decelerates without snapping to the normal speed cap. Road/sidewalk/grass/gravel queries share the map geometry; small curbs step up and ledges resume gravity. Trees and large fixtures have collision shapes and cannot trigger wall runs.
+Steering now separates finite turning speed from forward acceleration: a 90-degree turn settles in roughly 0.2 seconds on pavement. Braking, reversal, air control, grip, step height, jump buffering and ledge grace are centralized in `PHYSICS` in `apps/speedster/src/game.js`. Releasing boost decelerates without snapping to the normal speed cap. Road/sidewalk/grass/gravel queries share the map geometry; small curbs step up and ledges resume gravity. Trees and large fixtures have collision shapes and cannot trigger wall runs.
 
 The OSM converter now preserves 3,683 mapped street features. The scene adds raised sidewalks, zebra crossings, street signs, traffic signal fixtures, benches, bins, bicycle racks, fountains, park trees, bridge rails, textured grass, varied brick/stone facades, roof caps and cornices. Additional boulevard trees are generated where the map is sparse. **M** or **Expand** opens a detailed street map with zoom, drag-to-pan and selectable landmarks. Base terrain remains flat; this is a generalized playable reconstruction, not photogrammetry or surveyed architecture.
 

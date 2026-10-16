@@ -1,6 +1,7 @@
 import {projects} from '../data/projects.ts';
 export const STAGES=['Idea','Prototype','Beta','Live'];
-export const GAME_PATH='/projects/speedster/play';
+import {GAME_PATH} from '../../../../packages/game-bridge/index.js';
+export {GAME_PATH};
 export function filterProjects(list,status='All'){return status==='All'?list:list.filter(project=>project.status===status);}
 export function stageGroups(list){return {stages:STAGES.map(name=>({name,projects:list.filter(project=>project.stage===name)})),pending:list.filter(project=>!STAGES.includes(project.stage))};}
 export function nextProject(project,list=projects){return list[(list.findIndex(item=>item.slug===project.slug)+1)%list.length];}

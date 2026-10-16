@@ -1,7 +1,7 @@
 import {projects} from '../data/projects.ts';
 import {resolveRoute,filterProjects} from './project-model.js';
 import {renderPage} from './pages.js';
-import {wireDialog} from '../ui/components.js';
+import {wireDialog} from '../../../../packages/ui/components.js';
 import {mountLabMotion} from './motion.js';
 import {mountIntro} from './intro.js';
 
@@ -30,5 +30,5 @@ const introObserver=new MutationObserver(playVisible);introObserver.observe(docu
 const visibility=()=>{if(document.hidden)videos.forEach(video=>video.pause());else playVisible();};
 const reduce=()=>{if(reduced.matches)videos.forEach(video=>{video.pause();video.classList.remove('is-playing');});else playVisible();};
 document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',reduce);
-let destroyPlayer;if(resolveRoute(location.pathname).type==='play'){const {mountPlayer}=await import('../game/player.js');destroyPlayer=mountPlayer(motion);}
+let destroyPlayer;if(resolveRoute(location.pathname).type==='play'){const {mountPlayer}=await import('../player.js');destroyPlayer=mountPlayer(motion);}
 window.addEventListener('pagehide',()=>{clearTimeout(mediaTimer);destroyIntro();motion.destroy();mediaObserver.disconnect();introObserver.disconnect();videos.forEach(video=>video.pause());document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reduce);destroyPlayer?.();},{once:true});

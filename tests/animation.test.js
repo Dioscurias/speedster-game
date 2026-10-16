@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {createAnimationState,updateAnimation} from '../src/animation.js';
-import {createWorld} from '../src/game.js';
+import {createAnimationState,updateAnimation} from '../apps/speedster/src/animation.js';
+import {createWorld} from '../apps/speedster/src/game.js';
 const setup=()=>{const world=createWorld();world.status='running';return {world,state:createAnimationState(world)};};
 const tick=(state,world,input={},dt=1/60)=>{world.worldTime+=dt;return updateAnimation(state,world,input,dt);};
 test('movement input reacts immediately before significant speed builds',()=>{const {world,state}=setup();tick(state,world,{forward:true});assert.equal(state.phase,'launch');assert.ok(state.lean>0);});
