@@ -2,6 +2,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 const base=process.env.TEST_URL||'http://127.0.0.1:5173',errors=[];
+async function enterAustin(page,name){const frame=page.frameLocator('#game-window');await frame.locator('#join-player-name').waitFor({timeout:90000});await frame.locator('#join-player-name').fill(name);await frame.locator('#manta-start:not([disabled])').click();}
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base);await page.locator('.site-hero').waitFor();await page.evaluate(()=>document.fonts.ready);
@@ -14,6 +15,7 @@ try{
  await page.setViewportSize({width:1440,height:900});await page.screenshot({path:'/private/tmp/manta-site-desktop.png'});
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelectorAll('.pin-spacer').length===0&&getComputedStyle(document.querySelector('.manifesto p span')).opacity==='1');await page.screenshot({path:'/private/tmp/manta-site-full.png',fullPage:true});await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto(base+'/projects/speedster/play');
+ await enterAustin(page,'Runner');
  const frame=page.frameLocator('#game-window');await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});await frame.locator('.manta-hud:not([hidden])').waitFor();
  assert.equal(await frame.locator('use[href="#manta"]').count(),0,'the manta mark belongs to the lab');assert.equal(await page.locator('.site-header').isVisible(),false,'lab header hides while playing');assert.equal(new URL(await page.locator('#game-window').getAttribute('src'),base).pathname,'/projects/speedster/play');
  const collectionCount=await page.locator('#game-window').evaluate(f=>{const api=f.contentWindow.__velocity,read=api.getState;f.contentWindow.restoreHudReader=()=>api.getState=read;const count=read().collected+1;api.getState=()=>({...read(),collected:count});return count;});
@@ -50,6 +52,7 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await frame.locator('.ring-energy').evaluate(n=>getComputedStyle(n).animationName),'none');
  const mobile=await browser.newContext({viewport:{width:360,height:800},isMobile:true,hasTouch:true,deviceScaleFactor:3});
  const touch=await mobile.newPage();touch.on('pageerror',error=>errors.push(error.message));await touch.goto(base+'/projects/speedster/play');
+ await enterAustin(touch,'Touch Runner');
  await touch.waitForFunction(()=>document.querySelector('iframe')?.contentWindow.__velocity?.getState().status==='running',null,{timeout:90000});
  const touchFrame=touch.frameLocator('#game-window');assert.equal(await touchFrame.locator('.hud-keys').isVisible(),false);assert.equal(await touchFrame.locator('.manta-touch-controls').isVisible(),true);
  for(const [width,height] of [[360,800],[844,390]]){

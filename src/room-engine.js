@@ -1,16 +1,17 @@
 import {crashDamage, HIT_COOLDOWN_MS, MAX_HEALTH, resolvePlayerUpdate, sanitizeSnapshot} from './multiplayer-rules.js';
+import {sanitizePlayerName} from './player-profile.js';
 
 const PRESENCE_MS=8_000;
 
 export function createRoomEngine(initialPlayers=[]){
-  const players=new Map(initialPlayers.map(player=>[player.id,{health:MAX_HEALTH,respawnAt:0,lastHitAt:0,...player}]));
+  const players=new Map(initialPlayers.map(player=>[player.id,{health:MAX_HEALTH,respawnAt:0,lastHitAt:0,...player,name:sanitizePlayerName(player.name)}]));
   const collisions=new Map();
 
-  function update(id,input,now=Date.now()){
+  function update(id,input,now=Date.now(),profile={}){
     for(const [playerId,player] of players)if(now-player.seenAt>PRESENCE_MS)players.delete(playerId);
     let self=players.get(id);
     if(!self){const used=new Set([...players.values()].map(player=>player.colorIndex));let colorIndex=0;while(used.has(colorIndex))colorIndex++;self={id,colorIndex,health:MAX_HEALTH,respawnAt:0,lastHitAt:0};}
-    self={...self,...sanitizeSnapshot(input),seenAt:now};
+    self={...self,...sanitizeSnapshot(input),name:sanitizePlayerName(profile.name??self.name),seenAt:now};
     self=resolvePlayerUpdate(self,{damage:0,now});
     players.set(id,self);
 
@@ -37,6 +38,6 @@ export function createRoomEngine(initialPlayers=[]){
 }
 
 function publicPlayer(player){
-  const {id,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt}=player;
-  return {id,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt};
+  const {id,name,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt}=player;
+  return {id,name,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt};
 }

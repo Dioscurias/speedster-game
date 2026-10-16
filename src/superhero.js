@@ -3,6 +3,7 @@ import * as THREE from 'three';
 // the same semantic names for locomotion offsets and lightning attachments.
 export const HERO_BONES={pelvis:'Hips',spine_01:'Spine',spine_02:'Spine1',spine_03:'Spine2',neck_01:'Neck',Head:'Head',clavicle_l:'LeftShoulder',clavicle_r:'RightShoulder',upperarm_l:'LeftArm',upperarm_r:'RightArm',lowerarm_l:'LeftForeArm',lowerarm_r:'RightForeArm',hand_l:'LeftHand',hand_r:'RightHand',thigh_l:'LeftUpLeg',thigh_r:'RightUpLeg',calf_l:'LeftLeg',calf_r:'RightLeg',foot_l:'LeftFoot',foot_r:'RightFoot'};
 const SUIT_RED=new THREE.Color('#a41732');
+const suitGeometryOwners=new WeakMap();
 const PLAYER_COLORS=['#a41732','#285fa8','#6941a5','#b84c24','#177c7c','#d8d4ca','#397042','#b13b76'];
 export function speedsterColorForId(id){let hash=0;for(const char of String(id))hash=(hash*31+char.charCodeAt(0))|0;return PLAYER_COLORS[Math.abs(hash)%PLAYER_COLORS.length];}
 export function speedsterColorForIndex(index){if(index<PLAYER_COLORS.length)return PLAYER_COLORS[index];return new THREE.Color().setHSL((index*.61803398875)%1,.55,.43).getStyle();}
@@ -10,10 +11,21 @@ export function recolorSpeedsterSuit(model,color){
  const target=new THREE.Color(color);
  model.traverse(object=>{
   const attribute=object.isMesh&&object.geometry.attributes.color;if(!attribute)return;
-  object.geometry=object.geometry.clone();const colors=object.geometry.attributes.color;
+  // Clones share geometry. Own a copy, and retain the original fabric mask so
+  // changing a color or cloning a colored local runner never loses the suit.
+  if(suitGeometryOwners.get(object)!==object.geometry){object.geometry=object.geometry.clone();suitGeometryOwners.set(object,object.geometry);}
+  const colors=object.geometry.attributes.color;
+  let mask=object.geometry.getAttribute('speedsterSuitMask');
+  if(!mask){
+   const values=new Uint8Array(colors.count);
+   for(let index=0;index<colors.count;index++){
+    const dr=colors.getX(index)-SUIT_RED.r,dg=colors.getY(index)-SUIT_RED.g,db=colors.getZ(index)-SUIT_RED.b;
+    values[index]=dr*dr+dg*dg+db*db<.006?1:0;
+   }
+   mask=new THREE.Uint8BufferAttribute(values,1);object.geometry.setAttribute('speedsterSuitMask',mask);
+  }
   for(let index=0;index<colors.count;index++){
-   const dr=colors.getX(index)-SUIT_RED.r,dg=colors.getY(index)-SUIT_RED.g,db=colors.getZ(index)-SUIT_RED.b;
-   if(dr*dr+dg*dg+db*db<.006)colors.setXYZ(index,target.r,target.g,target.b);
+   if(mask.getX(index))colors.setXYZ(index,target.r,target.g,target.b);
   }
   colors.needsUpdate=true;
  });

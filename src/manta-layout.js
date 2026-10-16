@@ -3,6 +3,7 @@ import './manta-layout.css';
 import {icon,button,dialog,wireDialog} from './ui/components.js';
 import {mountMantaHUD} from './hud/manta-hud.js';
 import {minimapMetrics} from './minimap.js';
+import {PLAYER_NAME_MAX,readPlayerName,savePlayerName} from './player-profile.js';
 
 export function mountGameLayout(parkour,autoplay){
  document.body.classList.add('fps-game','manta-game');document.title='Speedster | '+(parkour?'The Last Household':'Austin');
@@ -39,8 +40,9 @@ export function mountGameLayout(parkour,autoplay){
  $('hud-fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await shell.requestFullscreen();}catch{hud.event('Fullscreen is unavailable in this browser.');}};
  let guide=$('info-dialog');if(!guide){document.body.insertAdjacentHTML('beforeend',dialog('info-dialog','Guide','<h2 id="info-dialog-title">Guide</h2><div id="dialog-content"></div>'));guide=$('info-dialog');wireDialog(guide);}
  guide.className='mr-dialog';guide.setAttribute('aria-label','Guide');guide.setAttribute('data-lenis-prevent','');
+ guide.addEventListener('close',()=>{guide.classList.remove('player-name-dialog');guide.setAttribute('aria-label','Guide');});
  if(!guide.querySelector('[data-close-dialog]')){const close=guide.querySelector('.close-dialog');close.className='mr-icon-btn mr-dialog-close';close.innerHTML=icon('close');}
- function showGuide(){pause();$('dialog-content').innerHTML=controls(parkour);if(!guide.open)guide.showModal();}
+ function showGuide(){pause();guide.setAttribute('aria-label','Guide');guide.classList.remove('player-name-dialog');$('dialog-content').innerHTML=controls(parkour);if(!guide.open)guide.showModal();}
  $('hud-guide').onclick=showGuide;
  const menuCard=parkour?menu.querySelector('.card'):menu;menu.classList.add('manta-pause');menu.setAttribute('role','dialog');menu.setAttribute('aria-label','Pause menu');menu.setAttribute('aria-modal','true');
  const brandLine=document.createElement('div');brandLine.className='pause-brand';brandLine.innerHTML='<span class="speedster-wordmark">SPEEDSTER</span>';menuCard.prepend(brandLine);
@@ -49,16 +51,33 @@ export function mountGameLayout(parkour,autoplay){
  const menuActions=document.createElement('div');menuActions.className='manta-menu-actions';menuActions.innerHTML=button('Change map',{id:'hud-maps',ghost:true})+button('Leave game',{id:'hud-leave',ghost:true});menuCard.append(menuActions);
  $('hud-maps').onclick=()=>{pause();if(window.parent!==window)window.parent.postMessage({type:'speedster:maps'},location.origin);else location.href='/play';};
  $('hud-leave').onclick=()=>{if(window.parent!==window)window.parent.postMessage({type:'manta:leave'},location.origin);else location.href='/';};
- if(!parkour){const credits=$('credits');credits.className='mr-menu-text';menuCard.append(credits);}
+ if(!parkour){
+  const rename=document.createElement('button');rename.type='button';rename.id='hud-player-name';rename.className='mr-menu-text';rename.textContent='Player name';menuCard.insertBefore(rename,menuActions);
+  rename.onclick=()=>{
+   pause();guide.setAttribute('aria-label','Player name');guide.classList.add('player-name-dialog');
+   $('dialog-content').innerHTML='<h2>Player name</h2><form class="player-name-form"><label for="edit-player-name">Player name</label><input id="edit-player-name" name="playerName" type="text" maxlength="'+PLAYER_NAME_MAX+'" autocomplete="nickname" spellcheck="false"><button type="submit" class="mr-btn">Save name</button></form>';
+   const form=$('dialog-content').querySelector('form'),input=$('edit-player-name');input.value=readPlayerName();
+   form.onsubmit=event=>{event.preventDefault();savePlayerName(input.value);guide.close();rename.focus();};
+   guide.showModal();input.focus();input.select();
+  };
+  const credits=$('credits');credits.className='mr-menu-text';menuCard.append(credits);
+ }
  const loader=document.createElement('div');loader.className='manta-loading';loader.setAttribute('role','status');loader.innerHTML=`<div class="loading-symbol"><svg class="loading-ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" pathLength="100"/></svg></div><span class="loading-wordmark">SPEEDSTER</span><p data-loading-label>Loading ${parkour?'The Last Household':'Austin'}…</p>${button('Play',{id:'manta-start'})}`;shell.append(loader);
- $('manta-start').onclick=()=>$(parkour?'play':'start').click();
+ const savedName=readPlayerName();
+ if(parkour)$('manta-start').onclick=()=>$('play').click();
+ else{
+  const form=document.createElement('form');form.className='player-name-form';
+  form.innerHTML='<label for="join-player-name">Player name</label><input id="join-player-name" name="playerName" type="text" maxlength="'+PLAYER_NAME_MAX+'" placeholder="Speedster" autocomplete="nickname" spellcheck="false">';
+  loader.append(form);form.append($('manta-start'));$('manta-start').type='submit';$('join-player-name').value=savedName;
+  form.onsubmit=event=>{event.preventDefault();if($('start').disabled)return;savePlayerName($('join-player-name').value);$('start').click();};
+ }
  const startButton=$(parkour?'play':'start');let previousStatus='ready',animation,autoStarted=false,cancelled=false;
  function frame(time){
   const raw=getState(),status=raw?.status||'ready';
   loader.hidden=status!=='ready';$('manta-start').disabled=!!startButton.disabled;
   const sourceLabel=parkour?startButton.textContent:$('start-label').textContent;
   loader.querySelector('[data-loading-label]').textContent=startButton.disabled?sourceLabel:'Ready when you are.';
-  if(autoplay&&!autoStarted&&!startButton.disabled){autoStarted=true;startButton.click();}
+  if(autoplay&&(parkour||savedName)&&!autoStarted&&!startButton.disabled){autoStarted=true;startButton.click();}
   if(raw){
    hud.update({...raw,bolts:raw.collected,speed:raw.speed*3.6,topSpeed:raw.topSpeed*3.6,health:parkour?100:parseFloat($('health-value').textContent),heading:raw.heading,braking:parkour?'—':parseFloat($('braking').textContent)||0,street:$(parkour?'zone':'street-name')?.textContent,players:parkour?1:Number($('online-count').textContent)||1,connection:parkour?'Single player':$('network-state').textContent},time);
    if(status!==previousStatus){if(status==='paused'){document.activeElement?.blur();resumeButton.focus({preventScroll:true});}if(status==='running')shell.focus({preventScroll:true});previousStatus=status;}
@@ -71,12 +90,15 @@ export function mountGameLayout(parkour,autoplay){
  // Native dialog Escape must close the dialog before the engine sees it.
  const onKey=event=>{
   if(guide.open&&event.key==='Escape'){event.stopImmediatePropagation();return;}
+  if(event.target instanceof Element&&event.target.closest('input,textarea,[contenteditable="true"]')){event.stopImmediatePropagation();return;}
+  if(event.type==='keyup')return;
   if(event.key!=='Tab'||getState()?.status!=='paused'||guide.open)return;
   const targets=[...menu.querySelectorAll('button,input,a[href]')].filter(node=>!node.disabled&&node.getClientRects().length),first=targets[0],last=targets.at(-1);
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  };
  window.addEventListener('keydown',onKey,true);
- window.addEventListener('pagehide',()=>{cancelled=true;cancelAnimationFrame(animation);hud.destroy();window.removeEventListener('keydown',onKey,true);window.removeEventListener('message',onMessage);window.removeEventListener('speedster:event',onEvent);},{once:true});
+ window.addEventListener('keyup',onKey,true);
+ window.addEventListener('pagehide',()=>{cancelled=true;cancelAnimationFrame(animation);hud.destroy();window.removeEventListener('keydown',onKey,true);window.removeEventListener('keyup',onKey,true);window.removeEventListener('message',onMessage);window.removeEventListener('speedster:event',onEvent);},{once:true});
 }
 
 function controls(parkour){

@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {CharacterAnimation} from '../src/character-animation.js';import {styleSuperhero,recolorSpeedsterSuit,speedsterColorForId} from '../src/superhero.js';import {SpeedLightning} from '../src/lightning.js';import {createWorld} from '../src/game.js';
+import {clone} from 'three/addons/utils/SkeletonUtils.js';
 async function hero(){const bytes=await fs.readFile(new URL('../public/assets/human/Superhero.glb',import.meta.url));const asset=await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');styleSuperhero(asset.scene);const world=createWorld();world.status='running';const animation=new CharacterAnimation(asset.scene,asset.animations,world);return {asset,world,animation};}
 test('multiplayer palette recolors only suit fabric and is stable per player',async()=>{
  const {asset}=await hero();const before=[];asset.scene.traverse(o=>{if(o.isMesh&&o.geometry.attributes.color){const colors=o.geometry.attributes.color;for(let i=0;i<colors.count;i++)before.push([colors.getX(i),colors.getY(i),colors.getZ(i)]);}});
@@ -9,6 +10,14 @@ test('multiplayer palette recolors only suit fabric and is stable per player',as
  const near=(r,g,b,target)=>Math.hypot(r-target.r,g-target.g,b-target.b)<.04;
  for(let i=0;i<before.length;i++){const [r,g,b]=before[i],changed=Math.abs(r-after[i][0])+Math.abs(g-after[i][1])+Math.abs(b-after[i][2])>.02;if(near(r,g,b,suit))suitChanged||=changed;if(near(r,g,b,skin))skinPreserved||=!changed;if(near(r,g,b,gold))goldPreserved||=!changed;}
  assert.ok(suitChanged);assert.ok(skinPreserved);assert.ok(goldPreserved);
+});
+test('both screens have identical vertex colors for each downloaded superhero',async()=>{
+ const a=(await hero()).asset.scene,b=(await hero()).asset.scene;
+ recolorSpeedsterSuit(a,'#285fa8');recolorSpeedsterSuit(b,'#6941a5');
+ const aOnOtherScreen=clone(b),bOnOtherScreen=clone(a);
+ recolorSpeedsterSuit(aOnOtherScreen,'#285fa8');recolorSpeedsterSuit(bOnOtherScreen,'#6941a5');
+ const colors=model=>{const meshes=[];model.traverse(mesh=>{if(mesh.isMesh&&mesh.geometry.attributes.color)meshes.push({name:mesh.name,colors:Array.from(mesh.geometry.attributes.color.array)});});return meshes;};
+ assert.deepEqual(colors(a),colors(aOnOtherScreen));assert.deepEqual(colors(b),colors(bOnOtherScreen));assert.notDeepEqual(colors(a),colors(b));
 });
 test('jump folds both superhero knees backward without spreading the ankles sideways',async()=>{
  const {asset,world,animation}=await hero();

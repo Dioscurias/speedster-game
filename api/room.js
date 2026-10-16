@@ -31,7 +31,7 @@ export default async function handler(request,response){
     const roomId=String(body.room||'austin').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,32)||'austin';
     if(!id)return response.status(400).json({error:'Player id required'});
     const engine=await loadRoom(roomId);
-    const result=engine.update(id,body.state,Date.now());
+    const result=engine.update(id,body.state,Date.now(),{name:body.name});
     await saveRoom(roomId,engine);
     return response.status(200).json(result);
   }catch(error){

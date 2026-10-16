@@ -11,6 +11,12 @@ npm run dev
 
 Open http://localhost:5173 in a browser with WebGL.
 
+## Player names and colors
+
+In the published Austin game, choose a player name before entering for the first time. Names are saved on the device and can be changed under **Escape → Player name**. Other players see the chosen name above the character. Names support up to 20 characters; an empty name uses Speedster.
+
+The room assigns each active player a suit color. The same color is applied to their own character and every remote copy. The local Vite development server remains a solo preview. To verify multiplayer against a production preview, run `TEST_ROOM_LOCAL=1 TEST_URL=http://127.0.0.1:5188 node scripts/identity-browser-check.mjs`; this uses the real room handler for two independent browser clients. To check the published service, omit `TEST_ROOM_LOCAL` and set `TEST_URL` to its URL.
+
 ## Controls
 
 - **WASD:** camera-relative movement, including diagonals. Release to brake; momentum takes time to dissipate.

@@ -31,6 +31,13 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
 .manta-game .heading-marker{width:32px;height:26px;fill:currentColor}
 .manta-game .speedster-wordmark{font:700 24px var(--display);letter-spacing:.12em}
 .manta-loading{position:absolute;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--ink);font:12px var(--body)}
+.manta-game .player-name-form{display:grid;gap:12px;width:min(280px,calc(100vw - 64px));text-align:left;margin:0}
+.manta-game .player-name-form label{color:var(--muted);font:12px var(--body)}
+.manta-game .player-name-form input{box-sizing:border-box;width:100%;min-width:0;min-height:46px;padding:12px 14px;border:1px solid var(--line);border-radius:2px;background:transparent;color:var(--ink);font:16px var(--body)}
+.manta-game .player-name-form .mr-btn{width:100%;justify-content:space-between}
+.manta-game #info-dialog.player-name-dialog{width:min(420px,calc(100% - 32px))}
+.manta-game #info-dialog.player-name-dialog h2{font-size:44px;margin-top:0}
+.manta-game #info-dialog.player-name-dialog .player-name-form{width:100%}
 .loading-symbol{position:relative;width:120px;height:120px;margin-bottom:18px}.loading-ring{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--blue-hi);stroke-width:.6;stroke-dasharray:100;animation:loading-draw 2.6s ease-in-out infinite}.loading-manta{position:absolute;left:30px;top:40px;width:60px;height:40px;animation:manta-glide 2.6s ease-in-out infinite}.loading-wordmark{font:600 28px var(--display);letter-spacing:.16em}.manta-loading p{font:10px var(--body);color:var(--muted);margin:0 0 22px}.manta-loading .mr-btn{min-width:175px}
 @keyframes loading-draw{0%{stroke-dashoffset:100;opacity:.3}70%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:-100;opacity:.3}}
 @keyframes manta-glide{0%,100%{transform:translateY(4px) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}
@@ -46,4 +53,5 @@ html:has(body.manta-game),body.manta-game{width:100%;height:100%;margin:0;overfl
  .manta-game .manta-touch-controls button:active{background:var(--blue);color:var(--ink)}
 }
 @media(max-height:500px){.manta-game .manta-pause,.manta-game #death{padding:18px;gap:10px;justify-content:flex-start}.manta-game .pause-brand{margin:0 0 10px}.manta-game .manta-pause h1,.manta-game .manta-pause h2{font-size:44px}.manta-game .manta-menu-actions{margin-top:0}.manta-game .manta-pause .card label{margin:5px 0}.manta-game .manta-pause .card label:last-of-type{margin-bottom:12px}}
+@media(max-height:500px){.manta-game .manta-loading{gap:8px}.manta-game .manta-loading .loading-symbol{width:60px;height:60px;margin:0}.manta-game .manta-loading p{margin-bottom:6px}.manta-game .player-name-form{gap:8px}.manta-game #info-dialog.player-name-dialog{padding:32px 22px}.manta-game #info-dialog.player-name-dialog h2{margin-bottom:16px}}
 @media(max-width:600px){.manta-game .manta-menu-actions{grid-template-columns:1fr;width:240px}.manta-game #info-dialog.mr-dialog{padding:40px 22px}.manta-game .mr-controls{font-size:12px;gap:14px 18px}.manta-game #info-dialog.mr-dialog h2{font-size:46px}}
