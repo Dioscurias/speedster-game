@@ -42,7 +42,7 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
    if(time-lastTick>=80||!previous){
     lastTick=time;setText('speed',Math.round(state.speed),true);setText('top-speed',Math.round(state.topSpeed));setText('health',Math.round(state.health));setText('energy',Math.round(state.energy));setText('bolts',state.bolts,true);
     setText('distance',state.distance>=1000?(state.distance/1000).toFixed(2):Math.floor(state.distance));setText('distance-unit',state.distance>=1000?'km':'m');setText('braking',state.braking??'—');setText('street',state.street||'');setText('players',state.players??1);setText('player-label',(state.players??1)===1?'player':'players');setText('heading',state.headingText);
-    if(!parkour)setText('connection',state.connection||'Connecting');refs['connection-dot'].classList.toggle('is-connected',parkour||state.connection==='Connected');
+    setText('connection',state.connection||'Connecting');refs['connection-dot'].classList.toggle('is-connected',state.connection==='Connected');
     for(const type of ['health','energy'])refs[`${type}-meter`].setAttribute('aria-valuenow',String(Math.round(state[type])));
     root.querySelector('#hud-phase').setAttribute('aria-checked',String(!!state.phasing));
     renderFeed(time);drawRadar?.(refs.radar,state);

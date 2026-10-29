@@ -1,16 +1,19 @@
 // Canvas map uses the same geographic features and street widths as the world.
 import {drawPlayerMarker} from './minimap.js';
-export function mountMapOverview(canvas,readout,zoomControl,map,world){
- const rect=canvas.getBoundingClientRect(),width=rect.width,height=rect.height,density=Math.min(globalThis.devicePixelRatio||1,3);
- canvas.width=Math.round(width*density);canvas.height=Math.round(height*density);
- const ctx=canvas.getContext('2d');ctx.setTransform(canvas.width/width,0,0,canvas.height/height,0,0);
+import {speedsterColorForIndex} from './superhero.js';
+export function mountMapOverview(canvas,readout,zoomControl,map,worldInput,getPlayers=()=>[]){
+ let world=typeof worldInput==='function'?worldInput():worldInput,width=1,height=1,base=1;
+ const ctx=canvas.getContext('2d');
  const middle={x:(map.bounds.minX+map.bounds.maxX)/2,z:(map.bounds.minZ+map.bounds.maxZ)/2},view={...middle,zoom:1};
- const base=Math.min((width-70)/(map.bounds.maxX-map.bounds.minX),(height-70)/(map.bounds.maxZ-map.bounds.minZ));
  const markers=(map.features||[]).filter(f=>f.kind==='poi'&&f.name&&['attraction','artwork','museum','theatre','library','townhall'].includes(f.category));
  for(const name of ['Texas State Capitol']){const b=map.buildings.find(b=>b.name===name);if(b)markers.push({name,category:'landmark',x:b.polygon.reduce((v,p)=>v+p[0],0)/b.polygon.length,z:b.polygon.reduce((v,p)=>v+p[1],0)/b.polygon.length});}
  let dragging=null,selected=null;
  const screen=(x,z)=>[width/2+(x-view.x)*base*view.zoom,height/2+(z-view.z)*base*view.zoom];
  function draw(){
+  world=typeof worldInput==='function'?worldInput():worldInput;
+  const rect=canvas.getBoundingClientRect(),density=Math.min(globalThis.devicePixelRatio||1,3);width=Math.max(100,rect.width);height=Math.max(100,rect.height);
+  if(canvas.width!==Math.round(width*density)||canvas.height!==Math.round(height*density)){canvas.width=Math.round(width*density);canvas.height=Math.round(height*density);}
+  ctx.setTransform(canvas.width/width,0,0,canvas.height/height,0,0);base=Math.min((width-70)/(map.bounds.maxX-map.bounds.minX),(height-70)/(map.bounds.maxZ-map.bounds.minZ));
   ctx.fillStyle='#182129';ctx.fillRect(0,0,width,height);
   const polygon=(points,fill)=>{ctx.fillStyle=fill;ctx.beginPath();points.forEach((p,i)=>{const q=screen(p[0],p[1]);i?ctx.lineTo(...q):ctx.moveTo(...q);});ctx.closePath();ctx.fill();};
   for(const a of map.areas)polygon(a.polygon,a.kind==='water'?'#385c70':'#354d43');
@@ -32,6 +35,8 @@ export function mountMapOverview(canvas,readout,zoomControl,map,world){
    occupied.push(box);ctx.save();ctx.translate(...p);ctx.rotate(angle);ctx.strokeStyle='#182129';ctx.strokeText(label,0,-6);ctx.fillStyle='#e4eaef';ctx.fillText(label,0,-6);ctx.restore();
   }
   for(const m of markers){const p=screen(m.x,m.z);ctx.fillStyle=m===selected?'#fff':'#e1c083';ctx.strokeStyle='#182129';ctx.lineWidth=2;ctx.beginPath();ctx.arc(...p,m===selected?5:2.5,0,Math.PI*2);ctx.stroke();ctx.fill();if(m===selected||m.name==='Texas State Capitol'){ctx.fillStyle='#fff0c7';ctx.font='500 11px "Space Grotesk", sans-serif';ctx.fillText(m.name,p[0],p[1]-13);}}
+  const peers=getPlayers();canvas.dataset.playerCount=String(peers.length+1);
+  for(const peer of peers){if(peer.health<=0)continue;const q=screen(peer.x,peer.z);ctx.fillStyle=speedsterColorForIndex(peer.colorIndex);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(...q,5,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.font='600 11px sans-serif';ctx.fillText(peer.name||'Player',q[0],q[1]-12);}
   const p=screen(world.x,world.z);drawPlayerMarker(ctx,...p,world.heading,17);
   ctx.textAlign='left';ctx.fillStyle='#e4eaef';ctx.font='600 12px "Space Grotesk", sans-serif';ctx.fillText('N ↑',18,22);ctx.font='500 10px "Space Grotesk", sans-serif';const scale=200*base*view.zoom;ctx.fillRect(18,height-18,scale,2);ctx.fillText('200 m',18,height-31);
  }
@@ -41,5 +46,10 @@ export function mountMapOverview(canvas,readout,zoomControl,map,world){
  canvas.onpointerup=e=>{if(!dragging)return;if(Math.hypot(e.clientX-dragging.startX,e.clientY-dragging.startY)<5){const p=point(e);selected=markers.find(m=>{const q=screen(m.x,m.z);return Math.hypot(p.x-q[0],p.y-q[1])<12;})||null;readout.textContent=selected?`${selected.name} · ${selected.category}`:'';}dragging=null;draw();};
  canvas.onpointercancel=()=>dragging=null;
  zoomControl.oninput=()=>{view.zoom=Number(zoomControl.value);draw();};
+ canvas.style.touchAction='none';
+ canvas.onwheel=event=>{event.preventDefault();view.zoom=Math.max(1,Math.min(8,view.zoom*Math.exp(-event.deltaY*.001)));zoomControl.value=String(view.zoom);draw();};
+ const recenter=document.getElementById('map-recenter');if(recenter)recenter.onclick=()=>{view.x=world.x;view.z=world.z;view.zoom=3;zoomControl.value='3';draw();};
  draw();
+ const timer=setInterval(()=>{if(canvas.isConnected)draw();else clearInterval(timer);},150);
+ return ()=>{clearInterval(timer);canvas.onpointerdown=canvas.onpointermove=canvas.onpointerup=canvas.onpointercancel=canvas.onwheel=null;};
 }

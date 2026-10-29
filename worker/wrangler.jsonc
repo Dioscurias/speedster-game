@@ -1,0 +1,10 @@
+{
+  "name": "speedster-rooms",
+  "main": "rooms.js",
+  "account_id": "664762ccaf8ae4a31aeeb75ec33ac6a7",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": true,
+  "durable_objects": {"bindings":[{"name":"ROOMS","class_name":"SpeedsterRoom"}]},
+  "migrations": [{"tag":"v1","new_sqlite_classes":["SpeedsterRoom"]}],
+  "observability": {"enabled":true,"logs":{"enabled":true,"invocation_logs":false,"head_sampling_rate":0.01},"traces":{"enabled":true,"head_sampling_rate":0.01}}
+}

@@ -1,0 +1,17 @@
+.hero-picker{display:grid;gap:9px;text-align:left;margin:12px 0 18px;width:100%;max-width:380px;color:#eee;font:12px sans-serif;letter-spacing:.02em}
+.hero-picker>span{font-size:10px;text-transform:uppercase;color:#a9adb5;letter-spacing:.12em}
+.hero-picker select{width:100%;padding:12px 14px;border:1px solid #4c5059;background:#151a20;color:#fff;border-radius:7px;font:13px sans-serif;min-height:44px}
+.hero-picker small{font:10px/1.6 sans-serif;color:#aab4be}
+.manta-loading .hero-picker{order:1;margin:20px auto 0}.manta-loading .player-name-form{order:2}.manta-loading>#manta-start{order:3}
+.hero-actions{position:absolute;z-index:13;bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;padding:7px;border:1px solid #ffffff30;border-radius:10px;background:#0a111bdd;backdrop-filter:blur(12px);color:#fff;max-width:calc(100% - 24px)}
+.hero-actions[hidden]{display:none}.hero-actions button{min-height:39px;min-width:45px;padding:6px 9px;border:1px solid #ffffff22;border-radius:5px;background:#ffffff08;color:#efd69b;font:12px sans-serif;touch-action:none;cursor:pointer}
+.hero-actions button span{display:block;font-size:9px;color:#d4dce4;margin-top:3px}.hero-actions button[aria-pressed=true],.hero-actions button:active{background:#1c6582;border-color:#6fd9fa}
+.hero-status{font:10px sans-serif;letter-spacing:.08em;padding:0 8px;color:#92daf3}.hero-status b{display:block;color:#f1d58e;margin-top:5px;white-space:nowrap}
+.manta-game #city-overview{filter:none;border-radius:8px;height:min(58vh,640px);width:100%;aspect-ratio:auto}
+.manta-game .hud-radar canvas{filter:none}
+.atlas-selected .hud-keys,.atlas-selected #hud-phase{display:none}
+.manta-loading{overflow:auto;padding:20px;box-sizing:border-box}.manta-loading>.hero-picker{flex-shrink:0}
+.manta-game .map-tools{flex-wrap:wrap}.map-tools button{padding:8px 12px;border:1px solid #ffffff44;border-radius:5px;background:#202830;color:#fff}
+#course-overview{display:block;width:100%;height:min(60vh,650px);background:#161c24;touch-action:none;border-radius:8px}
+@media(max-width:600px){.hero-actions{bottom:230px;gap:3px;padding:5px;width:max-content}.hero-actions button{min-width:37px;padding:6px 5px}.hero-status{padding:0 4px;font-size:8px}.hero-picker{max-width:100%}.hero-actions button span{font-size:8px}}
+@media(max-height:500px){.hero-actions{bottom:10px;left:48%;max-width:50%;gap:3px;padding:4px}.hero-status{display:none}.hero-actions button{min-width:32px;padding:4px}.hero-picker{margin:6px 0;font-size:10px;gap:4px}.hero-picker select{padding:7px;min-height:34px}.hero-picker small{display:none}.manta-loading .hero-picker{margin:5px auto 0}}

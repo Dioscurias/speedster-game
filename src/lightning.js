@@ -18,7 +18,7 @@ export class SpeedLightning{
  update(world,runner){
   if(world.status==='paused'||world.worldTime===this.time)return;
   this.time=world.worldTime;
-  const enabled=world.status==='running'&&(world.speed>8||world.phasing);
+  const enabled=world.hero!=='atlas'&&world.status==='running'&&(world.speed>8||world.phasing);
   for(const l of this.layers){l.visible=enabled;l.material.color.setHex(world.phasing?0x8befff:l===this.layers[0]?0xff870d:l===this.layers[1]?0xffd45c:0xfff4cd);}
   if(!enabled){this.history.reset();return;}
   runner.updateWorldMatrix(true,true);

@@ -33,7 +33,7 @@ export function prepareMap(data){
   }
  }
  const fixtures=createCollider(fixtureObstacles(features.filter(f=>!buildings.blocked(f.x,f.z))));
- const collider={terrain,surface:(x,z,y)=>Math.max(terrain(x,z).height,buildings.surface(x,z,y)),contacts:(x,z,y=0)=>[...buildings.contacts(x,z,y),...fixtures.contacts(x,z,y),...waterContacts(x,z)],blocked:(x,z,y=0)=>buildings.blocked(x,z,y)||fixtures.blocked(x,z,y)||waterContacts(x,z).length>0};
+ const collider={terrain,surface:(x,z,y)=>Math.max(terrain(x,z).height,buildings.surface(x,z,y)),contacts:(x,z,y=0)=>[...buildings.contacts(x,z,y),...fixtures.contacts(x,z,y),...(y<2?waterContacts(x,z):[])],blocked:(x,z,y=0)=>buildings.blocked(x,z,y)||fixtures.blocked(x,z,y)||(y<2&&waterContacts(x,z).length>0)};
  const congress=lines.filter(s=>s.road.name==='Congress Avenue'),start=nearestRoad(0,0,congress);let spawn=start?start.point:{x:0,z:0};
  if(collider.blocked(spawn.x,spawn.z)){for(const line of congress){const p={x:(line.a[0]+line.b[0])/2,z:(line.a[1]+line.b[1])/2};if(!collider.blocked(p.x,p.z)){spawn=p;break;}}}
  const yaw=start?Math.atan2(start.b[0]-start.a[0],-(start.b[1]-start.a[1])):.3;

@@ -7,20 +7,27 @@ const number=(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fa
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
 export function sanitizeSnapshot(input={}){
+  if(!input||typeof input!=='object')input={};
   return {
     x:clamp(number(input.x),-5000,5000),
     z:clamp(number(input.z),-5000,5000),
-    y:clamp(number(input.y),0,250),
+    y:clamp(number(input.y),0,600),
+    vy:clamp(number(input.vy),-150,250),
     vx:clamp(number(input.vx),-300,300),
     vz:clamp(number(input.vz),-300,300),
-    heading:number(input.heading),
+    heading:number(input.heading)%(Math.PI*2),
+    hero:input.hero==='atlas'?'atlas':'speedster',
+    flying:input.hero==='atlas'&&Boolean(input.flying),
+    boosting:Boolean(input.boosting),
+    grounded:Boolean(input.grounded),
+    punchTime:clamp(number(input.punchTime),0,.4),
     phasing:Boolean(input.phasing)
   };
 }
 
 export function crashDamage(a,b){
   if(a.phasing||b.phasing)return 0;
-  const distance=Math.hypot(number(a.x)-number(b.x),number(a.z)-number(b.z));
+  const distance=Math.hypot(number(a.x)-number(b.x),number(a.z)-number(b.z),number(a.y)-number(b.y));
   if(distance>PLAYER_COLLISION_RADIUS)return 0;
   const relativeSpeed=Math.hypot(number(a.vx)-number(b.vx),number(a.vz)-number(b.vz));
   return clamp(Math.round((relativeSpeed-8)*1.375),0,MAX_HEALTH);

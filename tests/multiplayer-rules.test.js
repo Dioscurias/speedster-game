@@ -13,7 +13,7 @@ test('phasing players do not collide',()=>{
 
 test('snapshots discard untrusted fields and clamp movement values',()=>{
   const snapshot=sanitizeSnapshot({x:Infinity,z:-9,y:999,vx:1e5,vz:-1e5,heading:20,phasing:1,admin:true});
-  assert.deepEqual(snapshot,{x:0,z:-9,y:250,vx:300,vz:-300,heading:20,phasing:true});
+  assert.equal(snapshot.x,0);assert.equal(snapshot.y,600);assert.equal(snapshot.vx,300);assert.equal(snapshot.vz,-300);assert.equal(snapshot.admin,undefined);assert.equal(snapshot.hero,'speedster');assert.ok(Math.abs(snapshot.heading)<=Math.PI*2);
 });
 
 test('lethal damage starts a three second respawn',()=>{

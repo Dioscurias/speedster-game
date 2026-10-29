@@ -3,7 +3,7 @@ import {sanitizePlayerName} from './player-profile.js';
 
 const PRESENCE_MS=8_000;
 
-export function createRoomEngine(initialPlayers=[]){
+export function createRoomEngine(initialPlayers=[],{combat=true}={}){
   const players=new Map(initialPlayers.map(player=>[player.id,{health:MAX_HEALTH,respawnAt:0,lastHitAt:0,...player,name:sanitizePlayerName(player.name)}]));
   const collisions=new Map();
 
@@ -15,7 +15,7 @@ export function createRoomEngine(initialPlayers=[]){
     self=resolvePlayerUpdate(self,{damage:0,now});
     players.set(id,self);
 
-    if(self.health>0){
+    if(combat&&self.health>0){
       for(const [otherId,currentOther] of players){
         if(otherId===id||currentOther.health<=0)continue;
         const pair=[id,otherId].sort().join(':');
@@ -38,6 +38,6 @@ export function createRoomEngine(initialPlayers=[]){
 }
 
 function publicPlayer(player){
-  const {id,name,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt}=player;
-  return {id,name,colorIndex,x,z,y,vx,vz,heading,phasing,health,respawnAt};
+  const {id,name,colorIndex,health,respawnAt,seenAt}=player;
+  return {id,name,colorIndex,health,respawnAt,seenAt,...sanitizeSnapshot(player)};
 }

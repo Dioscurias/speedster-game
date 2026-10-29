@@ -13,11 +13,17 @@ import {SpeedLightning} from './lightning.js';
 import {mountMapOverview} from './map-overview.js';
 import {styleSuperhero,speedsterColorForIndex} from './superhero.js';
 import {Multiplayer} from './multiplayer.js';
+import {stepHero} from './powerhouse.js';
+import {poseHero} from './hero-visuals.js';
+import {ImpactFX} from './impact-fx.js';
+import {selectedHero,wireHeroControls} from './hero-controls.js';
 
 const $=id=>document.getElementById(id),keys={};
 let jumpFX;const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let world=createWorld(),view={yaw:0,pitch:.34},map,city,loaded=false,quality=true,runner,animator,lightning,multiplayer,jumpQueued=false,toastUntil=0,dead=false,lastHealth=100;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b9d4e7');scene.fog=new THREE.FogExp2('#b9d4e7',.00165);
+const impacts=new ImpactFX(scene);const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map?.buildings||[],getMultiplayer:()=>multiplayer,getRunner:()=>runner,effects:impacts,toast:showToast});
+const newWorld=spawn=>({...createWorld(spawn),hero:selectedHero(),flying:false});
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;$('scene').appendChild(renderer.domElement);
 const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromScene(new RoomEnvironment(),.04);scene.environment=environment.texture;scene.environmentIntensity=.65;pmrem.dispose();
 const camera=new THREE.PerspectiveCamera(58,1,.08,1800);camera.position.set(3,3,7);
@@ -32,23 +38,25 @@ async function init(){try{
  styleSuperhero(human.scene,{normalMap:suitNormal});
  runner=fitted(human.scene,1.86);scene.add(runner);animator=new CharacterAnimation(human.scene,human.animations,world);
  const car=fitted(vehicle.scene,1.3);city=await createCity(scene,map,car);
- world=createWorld(map.spawn);world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;
+ world=newWorld(map.spawn);world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;
  lightning=new SpeedLightning(scene,animator);jumpFX=new JumpFX(scene,runner,(x,z,y)=>map.collider.surface(x,z,y));
- multiplayer=new Multiplayer({scene,template:runner,getWorld:()=>world,onState:handleMultiplayerState});
+ multiplayer=new Multiplayer({scene,template:runner,getWorld:()=>world,onState:handleMultiplayerState,clips:human.animations,onImpact:(event,quiet)=>impacts.add(event,quiet)});
+ multiplayer.applySelf({colorIndex:0,hero:world.hero});
  loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Play';
- window.__velocity={getState:()=>({...world,viewYaw:view.yaw,viewPitch:view.pitch}),getAnimation:()=>animator.snapshot(),getEffects:()=>({vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.blocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
+ window.__velocity={getState:()=>({...world,viewYaw:view.yaw,viewPitch:view.pitch}),getPeers:()=>[...multiplayer.avatars.values()].map(a=>a.state),getNetwork:()=>({status:multiplayer.status,online:multiplayer.online,id:multiplayer.id}),getAnimation:()=>animator.snapshot(),getEffects:()=>({craters:impacts.scars.length,particles:impacts.particles.length,vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.blocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
+ if(import.meta.env.DEV)window.__velocity.debug={place:state=>{Object.assign(world,state);if(Number.isFinite(state.heading)){view.yaw=state.heading;shownHeading=state.heading;}animator.reset(world);jumpFX.reset(world);impacts.wasGrounded=world.grounded;},peerVisuals:()=>[...multiplayer.avatars.values()].map(a=>({position:a.root.position.toArray(),visible:a.model.visible,validRig:Object.values(a.animation?.bones||{}).every(b=>b.bone.quaternion.toArray().every(Number.isFinite))}))};
 }catch(error){console.error(error);$('start-label').textContent='Reload to retry';$('start').disabled=false;$('start').onclick=()=>location.reload();showToast('An asset could not load. Reload to try again.',30000);}}
 function keysClear(){Object.keys(keys).forEach(k=>keys[k]=false);jumpQueued=false;}
 function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-austin'));if(d&&Number.isFinite(d.distance)&&Number.isFinite(d.topSpeed)&&Number.isFinite(d.pickups))return d;}catch{}return {distance:0,topSpeed:0,pickups:0};}
 function saveRecords(){const r=readRecords();r.distance=Math.max(r.distance,world.distance);r.topSpeed=Math.max(r.topSpeed,world.topSpeed);r.pickups=Math.max(r.pickups,world.collected);try{localStorage.setItem('velocity-austin',JSON.stringify(r));}catch{}}
-function reset(){saveRecords();lightning.reset();world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
+function reset(){saveRecords();lightning.reset();world=newWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);impacts.wasGrounded=true;shownHeading=world.heading;city.pickups.forEach(p=>p.available=0);keysClear();$('result').classList.add('hidden');$('death').classList.add('hidden');document.body.classList.add('running');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}
 function pause(){if(world.status==='running'){world.status='paused';saveRecords();$('result').classList.remove('hidden');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game');}else if(world.status==='paused'){world.status='running';$('result').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');}keysClear();}
 function showToast(text,duration=2400){$('toast').textContent=text;$('toast').style.opacity='1';toastUntil=performance.now()+duration;if(document.body.classList.contains('fps-game'))window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}));}
 function handleMultiplayerState(data){
  const health=data.self.health;$('health-value').innerHTML=`${health}<span>%</span>`;$('health-fill').style.width=`${health}%`;$('online-count').textContent=String(data.online);$('network-state').textContent='Connected';
  if(health<lastHealth&&health>0)showToast(`${lastHealth-health} damage`,1100);
  if(health<=0&&!dead){dead=true;world.status='dead';keysClear();$('death').classList.remove('hidden');$('result').classList.add('hidden');}
- if(dead&&health>0){dead=false;world=createWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
+ if(dead&&health>0){dead=false;world=newWorld(map.spawn);world.status='running';world.heading=map.spawnYaw;view={yaw:map.spawnYaw,pitch:.34};animator.reset(world);jumpFX?.reset(world);shownHeading=world.heading;$('death').classList.add('hidden');showToast('Respawned');}
  if(dead)$('respawn-count').textContent=String(Math.max(0,Math.ceil((data.self.respawnAt-data.serverTime)/1000)));
  lastHealth=health;
 }
@@ -66,7 +74,7 @@ function updateHUD(){
  const mapPlayers=multiplayer?Array.from(multiplayer.avatars.values(),avatar=>avatar.state).filter(Boolean).map(player=>({...player,color:speedsterColorForIndex(player.colorIndex)})):[];
  const radar=$('minimap'),hudRadar=radar.dataset.hudRadar==='true';city.drawMap(radar,world,{players:mapPlayers,pickups:city.pickups,headingUp:radar.dataset.headingUp==='true',background:hudRadar?'transparent':undefined,north:!hudRadar,scaleLegend:!hudRadar});
  $('braking').textContent=`${Math.round(world.speed*world.speed/(2*PHYSICS.braking*world.grip))} m`;
- if(multiplayer){$('online-count').textContent=String(multiplayer.online);$('network-state').textContent=multiplayer.connected?'Connected':'Reconnecting';}
+ if(multiplayer){$('online-count').textContent=String(multiplayer.online);$('network-state').textContent=multiplayer.status;}
  if(document.body.classList.contains('fps-game'))window.dispatchEvent(new CustomEvent('speedster:hud',{detail:{health:lastHealth,energy:world.energy,speed:world.speed*3.6,topSpeed:world.topSpeed*3.6,distance:world.distance,bolts:world.collected,heading:world.heading,boosting:world.boosting,status:world.status}}));
 }
 let shownHeading=0;
@@ -84,10 +92,12 @@ function updateScene(dt){
  runner.traverse(o=>{if(o.isMesh){o.material.transparent=world.phasing;o.material.opacity=world.phasing?.48+.12*Math.sin(world.worldTime*137):1;o.material.depthWrite=!world.phasing;}});
  $('phase').classList.toggle('active',world.phasing);$('phase').setAttribute('aria-pressed',String(world.phasing));
  lightning.update(world,runner);jumpFX.update(world,animationDt,reducedMotion);
+ if(active)poseHero(animator,runner,world);impacts.update(world,active?dt:0);
  multiplayer?.update(dt);
  const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=world.boosting?10:7,horizontal=Math.cos(pitch)*distance;
  const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,world.y+1.25+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);
  const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
+ const quake=impacts.camera(reducedMotion);target.x+=quake.shake;target.y+=quake.dip;
  const clear=world.phasing?1:cameraClearance(world.x,world.z,target.x,target.z,map.collider,world.y+1.4);target.x*=clear;target.z*=clear;
  camera.position.lerp(target,1-Math.exp(-dt*10));const safe=world.phasing?1:cameraClearance(world.x,world.z,camera.position.x,camera.position.z,map.collider,camera.position.y);camera.position.x*=safe;camera.position.z*=safe;
  camera.lookAt(Math.sin(yaw)*1.7,world.y+1.35,-Math.cos(yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,(world.boosting?76:58)+jumpCamera.fov,Math.min(1,dt*5));camera.updateProjectionMatrix();
@@ -99,7 +109,7 @@ document.querySelectorAll('[data-key]').forEach(button=>{button.addEventListener
 $('quality').onclick=()=>{quality=!quality;renderer.setPixelRatio(quality?Math.min(devicePixelRatio,1.6):1);renderer.shadowMap.enabled=quality;$('quality').textContent=quality?'HQ':'LQ';showToast(quality?'High quality enabled':'Performance mode enabled');};
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('.game-frame').requestFullscreen();}catch{showToast('Fullscreen is unavailable in this browser.');}};
 const guide=`<span class="eyebrow">FIELD GUIDE / AUSTIN</span><h2>Feel the momentum.</h2><p>Explore a real downtown Austin map: Congress Avenue, Sixth Street, the Capitol and Lady Bird Lake. There is no race timer.</p><ul><li><strong>WASD:</strong> move relative to the camera. Steering responds quickly while acceleration stays gradual. Grass and gravel have less grip than pavement. Release to brake; watch the surface-aware stopping-distance estimate.</li><li><strong>← / → arrows:</strong> rotate the camera. <strong>↑ / ↓:</strong> raise or lower the view. The mouse does not control the camera.</li><li><strong>Shift:</strong> apply speedster acceleration, up to 936 km/h. Normal running is capped at 324 km/h.</li><li><strong>Space:</strong> jump. Hold Space for a full jump; tap for a short hop. Limited air steering lets you adjust your landing. Takeoff uses 9.81 m/s² gravity, with stronger downward gravity for a quicker landing. Small curbs step up automatically; buffered jumps and a short ledge grace period make parkour forgiving.</li><li><strong>E:</strong> slow time to manage corners. Turning is responsive; wall impacts stop inward momentum while preserving sliding along the wall.</li><li><strong>Q / Phase button (hold):</strong> pass through buildings and traffic. Release in open space. Releasing inside a building returns you to your last clear position.</li><li><strong>Wall run:</strong> jump and rush toward a building, then keep moving into it to climb. Space pushes off; reaching the top carries you onto the roof.</li><li><strong>Lightning:</strong> refill 25 energy. Pickups respawn after 25 seconds.</li><li><strong>M / Expand map:</strong> explore street names, parks, trails and landmarks. Drag to pan and use the zoom slider.</li><li><strong>Escape:</strong> pause and save records. On mobile, W/A/S/D buttons move; the separate arrows control the view.</li></ul><p>The playable area is a downtown extract about 1.6 × 2.4 km. Street and building outlines are from OpenStreetMap. Trees, street furniture, crossings and points of interest use mapped locations. Curbs, facade details and bridge rails are generalized; base terrain is flat and missing building heights are estimated. Superhuman speed and acceleration remain fictional.</p>`;
-function showMap(){if(!loaded)return;openInfo(`<h2>Austin</h2><div class="map-tools"><label>Zoom <input id="map-zoom" type="range" min="1" max="4" step=".1" value="1"></label></div><canvas id="city-overview" width="900" height="1000" aria-label="Austin map. Drag to pan; select a landmark to see its name."></canvas><p id="map-place" aria-live="polite"></p>`);mountMapOverview($('city-overview'),$('map-place'),$('map-zoom'),map,world);}
+function showMap(){if(!loaded)return;openInfo(`<h2>Austin · Live map</h2><div class="map-tools"><label>Zoom <input id="map-zoom" type="range" min="1" max="8" step=".1" value="1"></label><button id="map-recenter">Find me</button></div><canvas id="city-overview" width="900" height="1000" aria-label="Austin map. Drag to pan; select a landmark to see its name."></canvas><p id="map-place" aria-live="polite">Gold arrow: you · colored dots: other players</p>`);const dispose=mountMapOverview($('city-overview'),$('map-place'),$('map-zoom'),map,()=>world,()=>window.__velocity.getPeers());$('info-dialog').addEventListener('close',dispose,{once:true});}
 $('map-open').onclick=showMap;$('minimap').onclick=showMap;
 function openInfo(content){if(world.status==='running')pause();$('dialog-content').innerHTML=content;$('info-dialog').showModal();}
 $('guide-tab').onclick=$('how-to').onclick=()=>openInfo(guide);
@@ -110,7 +120,7 @@ new ResizeObserver(()=>{const r=$('scene').getBoundingClientRect();renderer.setS
 let last=performance.now(),lastHUD=0,lastSave=0,accumulator=0;
 function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.1);last=now;
  if(loaded){if(world.status==='running'){view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt);accumulator+=dt;
-  while(accumulator>=1/120){stepWorld(world,{left:keys.a,right:keys.d,forward:keys.w,backward:keys.s,boost:keys.shift,slow:keys.e,phase:keys.q,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,map.collider);jumpQueued=false;contacts();accumulator-=1/120;}
+  while(accumulator>=1/120){stepHero(world,{left:keys.a,right:keys.d,forward:keys.w,backward:keys.s,boost:keys.shift,slow:keys.e,phase:world.hero!=='atlas'&&keys.q,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,map.collider);impacts.observe(world,heroControls.emit);jumpQueued=false;contacts();accumulator-=1/120;}
  }else{accumulator=0;jumpQueued=false;}
  multiplayer?.poll(now);updateScene(dt);if(now-lastHUD>100){updateHUD();lastHUD=now;}if(world.status==='running'&&now-lastSave>5000){saveRecords();lastSave=now;}}
  if(now>toastUntil)$('toast').style.opacity='0';renderer.render(scene,camera);

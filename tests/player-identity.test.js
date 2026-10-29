@@ -34,7 +34,7 @@ test('a multiplayer response applies the same authoritative color to the local r
  t.mock.method(globalThis,'fetch',async(url,options)=>{
   body=JSON.parse(options.body);return Response.json({self:{id:body.id,name:body.name,colorIndex,health:100,respawnAt:0},players:[],online:1});
  });
- const local=suit(),multiplayer=new Multiplayer({scene:new THREE.Scene(),template:local,getWorld:()=>({...state(0),status:'running'})});
+ const local=suit(),multiplayer=new Multiplayer({scene:new THREE.Scene(),template:local,getWorld:()=>({...state(0),status:'running'}),request:globalThis.fetch});
  await multiplayer.poll(0);matches(colorAt(local),speedsterColorForIndex(1));assert.equal(multiplayer.connected,true);assert.equal(typeof body.name,'string');
  colorIndex=2;await multiplayer.poll(200);matches(colorAt(local),speedsterColorForIndex(2));
 });

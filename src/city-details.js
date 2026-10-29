@@ -4,7 +4,7 @@ import {nearestSegment} from './game.js';
 const hash=n=>{const v=Math.sin(Number(n)*12.9898+78.233)*43758.5453;return v-Math.floor(v);};
 export function nearbyStreet(map,x,z){let best=null;for(const s of map.roadNear(x,z)){if(s.road.width<=5||s.road.kind==='pedestrian')continue;const p=nearestSegment(x,z,s.a,s.b),d=Math.hypot(p.x-x,p.z-z);if(!best||d<best.distance)best={...s,point:p,distance:d};}return best;}
 export function createCityDetails(root,map){
- const groups=new Map(),labels=[],counts={trees:0,benches:0,lamps:0,crossings:0,signals:0,pointsOfInterest:0};
+ const groups=new Map(),labels=[],counts={trees:0,benches:0,lamps:0,crossings:0,signals:0,pointsOfInterest:0,rooftopUnits:0,rooftopHelipads:0};
  const geometries={box:new THREE.BoxGeometry(1,1,1),cylinder:new THREE.CylinderGeometry(.5,.5,1,10),sphere:new THREE.SphereGeometry(1,14,10),cone:new THREE.ConeGeometry(1,1,10)};
  // An irregular canopy avoids repeating perfectly round foliage clusters.
  const canopy=geometries.sphere.clone(),v=new THREE.Vector3();for(let i=0;i<canopy.attributes.position.count;i++){v.fromBufferAttribute(canopy.attributes.position,i);const scale=1+.1*Math.sin(v.x*12+v.y*9)*Math.cos(v.z*11-v.y*4);v.multiplyScalar(scale);canopy.attributes.position.setXYZ(i,v.x,v.y,v.z);}canopy.computeVertexNormals();geometries.canopy=canopy;
@@ -45,6 +45,18 @@ export function createCityDetails(root,map){
  for(const s of map.lines.filter(s=>s.road.bridge&&s.road.width>5&&s.length>15)){
   const yaw=Math.atan2(s.b[0]-s.a[0],s.b[1]-s.a[1]),ux=(s.b[0]-s.a[0])/s.length,uz=(s.b[1]-s.a[1])/s.length;
   for(const side of [-1,1]){const ox=-uz*(s.road.width/2-.2)*side,oz=ux*(s.road.width/2-.2)*side;add('box','concrete',(s.a[0]+s.b[0])/2+ox,.58,(s.a[1]+s.b[1])/2+oz,.22,1.1,s.length,yaw);}
+ }
+ // Rooftop equipment gives flight a readable sense of scale. Keep all props on
+ // the actual roof polygon, using the same collision surface as the player.
+ for(const b of map.buildings){
+  if(b.height<12)continue;const x=b.polygon.reduce((s,p)=>s+p[0],0)/b.polygon.length,z=b.polygon.reduce((s,p)=>s+p[1],0)/b.polygon.length;
+  if(map.buildingCollider.surface(x,z,b.height+.1)!==b.height)continue;
+  for(const offset of [-2,2])if(map.buildingCollider.surface(x+offset,z,b.height+.1)===b.height){add('box','metal',x+offset,b.height+.65,z,1.7,1.3,2.5);add('cylinder','concrete',x+offset,b.height+1.35,z,.8,.15,.8);counts.rooftopUnits++;}
+  if(b.height>45&&hash(b.id)>.65&&[[-6,-6],[6,-6],[6,6],[-6,6]].every(([dx,dz])=>map.buildingCollider.surface(x+dx,z+dz,b.height+.1)===b.height)){
+   add('cylinder','metal',x,b.height+.08,z+0,10,.12,10);
+   for(const dx of [-1,1])add('box','yellow',x+dx,b.height+.16,z,.35,.02,3.3);
+   add('box','yellow',x,b.height+.16,z,2,.02,.35);counts.rooftopHelipads++;
+  }
  }
  const chunks=[];for(const group of groups.values()){const chunk=new THREE.Group();root.add(chunk);for(const [key,matrices] of group.parts){const [type,material]=key.split(':'),mesh=new THREE.InstancedMesh(geometries[type],mats[material],matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=!['white','water'].includes(material);mesh.receiveShadow=true;mesh.computeBoundingSphere();chunk.add(mesh);}chunks.push({...group,parts:null,chunk});}
  return {counts,update(world){for(const c of chunks)c.chunk.visible=Math.hypot(c.x-world.x,c.z-world.z)<620;for(const l of labels)l.mesh.visible=Math.hypot(l.x-world.x,l.z-world.z)<150;}};
