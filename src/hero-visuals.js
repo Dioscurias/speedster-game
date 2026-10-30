@@ -7,22 +7,33 @@ export function flightPose(w){
  const climb=Math.atan2(w.vy||0,Math.max(1,horizontal));
  return {pitch:travel*(-(w.airBraking?.35:w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
 }
-export function poseHero(animator,model,w){
- if(w.hero!=='atlas')return;
- const atlas=true,pose=flightPose(w);model.scale.set(atlas?1.05:1,atlas?1.03:1,atlas?1.04:1);
- model.rotation.x=pose.pitch;model.rotation.z=pose.bank;
- if(atlas&&w.flying){
-  animator.bodyBend('Spine',-.06);
-  const travel=clamp(Math.hypot(w.vx||0,w.vz||0)/55,0,1);
+export function poseHero(animator,model,w,dt=1/60){
+ if(w.hero!=='atlas'||w.status==='paused'||dt<=0)return;
+ const atlas=true,pose=flightPose(w),step=clamp(dt,0,.1);
+ const motion=animator.atlasMotion??={pitch:0,bank:0,travel:0,boost:0,blend:0,time:0};motion.time+=step;
+ const ease=(from,to,rate)=>from+(to-from)*(1-Math.exp(-step*rate));
+ motion.pitch=ease(motion.pitch,pose.pitch,w.slamming?12:7);motion.bank=ease(motion.bank,pose.bank,5);
+ motion.travel=ease(motion.travel,w.flying?clamp(Math.hypot(w.vx||0,w.vz||0)/55,0,1):0,5);
+ motion.boost=ease(motion.boost,w.boosting?1:0,6);motion.blend=ease(motion.blend,w.flying?1:0,w.grounded?12:7);
+ model.scale.set(1.05,1.03,1.04);
+ const breathing=Math.sin(motion.time*2.1),hover=motion.blend*(1-motion.travel);
+ model.rotation.x=motion.pitch+breathing*.012*hover;model.rotation.z=motion.bank+Math.sin(motion.time*1.4)*.014*hover;
+ if(motion.blend>.01){
+  animator.bodyBend('Spine',(-.06+breathing*.018)*motion.blend);
+  animator.bodyBend('Neck',breathing*.012*hover);
+  const travel=motion.travel,boost=motion.boost;
+  const mix=(a,b)=>a.map((n,i)=>n+(b[i]-n)*boost);
   for(const side of ['Left','Right']){
    const sign=side==='Left'?1:-1;
    // Hips remain narrow; a slight knee bend avoids the airborne running stance.
-   animator.aimLimb?.(side+'UpLeg',side+'Leg',[-sign*.035,-1,.045]);
-   animator.aimLimb?.(side+'Leg',side+'Foot',[sign*.015,-1,-.07]);
-   const upper=w.boosting?[sign*.06,-1+travel*2,.07]:[sign*(.10+travel*.85),-1+travel*.85,.06];
-   const lower=w.boosting?[sign*.035,-1+travel*2,.10]:[sign*(.04+travel*.85),-1+travel*.85,.12];
-   animator.aimLimb?.(side+'Arm',side+'ForeArm',upper);
-   animator.aimLimb?.(side+'ForeArm',side+'Hand',lower);
+   const requested=clamp(Math.hypot(w.vx||0,w.vz||0)/55,0,1);
+   const drift=Math.sin(motion.time*1.8+sign*.7)*.025*(1-travel)+Math.sin(motion.time*3+sign)*.014*travel+(requested-travel)*.22;
+   animator.aimLimb?.(side+'UpLeg',side+'Leg',[-sign*.035,-1,.045+drift],motion.blend);
+   animator.aimLimb?.(side+'Leg',side+'Foot',[sign*.015,-1,-.09-drift],motion.blend);
+   const upper=mix([sign*(.10+travel*.85),-1+travel*.85,.06+drift],[sign*.06,-1+travel*2,.07]);
+   const lower=mix([sign*(.04+travel*.85),-1+travel*.85,.16-drift],[sign*.035,-1+travel*2,.10]);
+   animator.aimLimb?.(side+'Arm',side+'ForeArm',upper,motion.blend);
+   animator.aimLimb?.(side+'ForeArm',side+'Hand',lower,motion.blend);
   }
  }
  if(atlas&&w.punchTime>0){

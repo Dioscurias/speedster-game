@@ -32,3 +32,9 @@ Added B air brake (also available on the Atlas action bar), more responsive move
 Punch initiation now faces the camera aim rather than the last movement heading. A narrow ±0.18 radian assist cone finds nearby wall edges when the centre ray narrowly misses; it keeps the existing reach limit and never hits behind the player. Atlas's flight camera bounds vertical lag to three metres around its desired chase position during fast climbs/dives. Takeoff checks the full 1.5 m lift with head/feet clearance before changing position or flight state and reports insufficient clearance without moving the character.
 
 Regression coverage: fast-climb/dive camera bounds (Speedster unaffected), off-centre/behind/out-of-range punches, and low-ceiling takeoff refusal. Existing character-power and real two-player checks are rerun on both maps.
+
+## Atlas animation fluidity
+
+Replace immediate root pitch/bank and arm-mode changes with time-based exponential easing. Airborne limb alignment blends into and out of the locomotion pose, including landings. Add low-amplitude breathing, asymmetrical hover knee/arm drift, and leg follow-through that responds to acceleration. Atlas reset clears animation memory; paused poses remain unchanged. Local and remote avatars receive their actual animation timestep. Tests compare 30/120 fps, pause freezing, gradual acceleration/landing orientation, secondary limb motion and the real model's safe hover alignment.
+
+Validation for animation fluidity: 142 unit tests, build, both-map power/mesh checks and responsive browser regression passed. The live shared-impact browser check timed out once waiting for a peer crater; a full rerun passed without changes to protocol or test assertions. No networking code changed in this pass except forwarding timestep to remote-avatar pose rendering.

@@ -10,7 +10,7 @@ export class CharacterAnimation{
   this.bodyAxis=new THREE.Vector3();this.parentRotation=new THREE.Quaternion();this.modelRotation=new THREE.Quaternion();
   this.applyWeights();this.mixer.update(0);for(const r of Object.values(this.bones))r.neutral.copy(r.bone.quaternion);this.capture();
  }
- reset(world){this.restore();this.state=createAnimationState(world);for(const action of Object.values(this.actions)){action.reset();action.play();}this.applyWeights();this.mixer.update(0);this.capture();}
+ reset(world){this.atlasMotion=null;this.restore();this.state=createAnimationState(world);for(const action of Object.values(this.actions)){action.reset();action.play();}this.applyWeights();this.mixer.update(0);this.capture();}
  restore(){for(const {bone,base} of Object.values(this.bones))bone.quaternion.copy(base);}
  capture(){for(const record of Object.values(this.bones))record.base.copy(record.bone.quaternion);}
  applyWeights(){const s=this.state;this.actions.Idle.setEffectiveWeight(s.idle);this.actions.Walk.setEffectiveWeight(s.walk);this.actions.Run.setEffectiveWeight(s.run);this.actions.Walk.timeScale=Math.max(.5,Math.min(1.8,s.lastSpeed/2.2));this.actions.Run.timeScale=s.cadence;}
@@ -26,14 +26,14 @@ export class CharacterAnimation{
   record.bone.quaternion.premultiply(this.rotation);
  }
  // Align a limb using actual joint positions rather than asset-dependent Euler guesses.
- aimLimb(name,childName,direction){
+ aimLimb(name,childName,direction,weight=1){
   const bone=this.bones[name]?.bone,child=this.bones[childName]?.bone;if(!bone||!child)return;
   this.model.updateWorldMatrix(true,true);
   const origin=bone.getWorldPosition(new THREE.Vector3()),current=child.getWorldPosition(new THREE.Vector3()).sub(origin).normalize();
   const desired=new THREE.Vector3(...direction).normalize().applyQuaternion(this.model.getWorldQuaternion(new THREE.Quaternion())).normalize();
   const delta=new THREE.Quaternion().setFromUnitVectors(current,desired);
   const target=delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
-  const parent=bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();bone.quaternion.copy(parent.multiply(target)).normalize();
+  const parent=bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();bone.quaternion.slerp(parent.multiply(target),weight).normalize();
  }
  update(world,input,dt){
   if(world.status==='paused'||dt<=0)return this.state;
