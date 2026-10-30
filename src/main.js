@@ -14,7 +14,7 @@ import {mountMapOverview} from './map-overview.js';
 import {styleSuperhero,speedsterColorForIndex} from './superhero.js';
 import {Multiplayer} from './multiplayer.js';
 import {stepHero} from './powerhouse.js';
-import {poseHero} from './hero-visuals.js';
+import {poseHero,inspectHero} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
 import {selectedHero,wireHeroControls} from './hero-controls.js';
 
@@ -22,7 +22,7 @@ const $=id=>document.getElementById(id),keys={};
 let jumpFX;const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let world=createWorld(),view={yaw:0,pitch:.34},map,city,loaded=false,quality=true,runner,animator,lightning,multiplayer,jumpQueued=false,toastUntil=0,dead=false,lastHealth=100;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b9d4e7');scene.fog=new THREE.FogExp2('#b9d4e7',.00165);
-const impacts=new ImpactFX(scene);const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map?.buildings||[],getMultiplayer:()=>multiplayer,getRunner:()=>runner,effects:impacts,toast:showToast});
+const impacts=new ImpactFX(scene);const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map?.buildings||[],getMultiplayer:()=>multiplayer,getRunner:()=>runner,onChange:()=>{keysClear();animator?.reset(world);},effects:impacts,toast:showToast});
 const newWorld=spawn=>({...createWorld(spawn),hero:selectedHero(),flying:false});
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;$('scene').appendChild(renderer.domElement);
 const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromScene(new RoomEnvironment(),.04);scene.environment=environment.texture;scene.environmentIntensity=.65;pmrem.dispose();
@@ -44,7 +44,7 @@ async function init(){try{
  multiplayer.applySelf({colorIndex:0,hero:world.hero});
  loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Play';
  window.__velocity={getState:()=>({...world,viewYaw:view.yaw,viewPitch:view.pitch}),getPeers:()=>[...multiplayer.avatars.values()].map(a=>a.state),getNetwork:()=>({status:multiplayer.status,online:multiplayer.online,id:multiplayer.id}),getAnimation:()=>animator.snapshot(),getEffects:()=>({craters:impacts.scars.length,particles:impacts.particles.length,vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.blocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
- if(import.meta.env.DEV)window.__velocity.debug={place:state=>{Object.assign(world,state);if(Number.isFinite(state.heading)){view.yaw=state.heading;shownHeading=state.heading;}animator.reset(world);jumpFX.reset(world);impacts.wasGrounded=world.grounded;},peerVisuals:()=>[...multiplayer.avatars.values()].map(a=>({position:a.root.position.toArray(),visible:a.model.visible,validRig:Object.values(a.animation?.bones||{}).every(b=>b.bone.quaternion.toArray().every(Number.isFinite))}))};
+ if(import.meta.env.DEV)window.__velocity.debug={visuals:()=>inspectHero(runner,camera),place:state=>{Object.assign(world,state);if(Number.isFinite(state.heading)){view.yaw=state.heading;shownHeading=state.heading;}animator.reset(world);jumpFX.reset(world);impacts.wasGrounded=world.grounded;},peerVisuals:()=>[...multiplayer.avatars.values()].map(a=>({position:a.root.position.toArray(),visible:a.model.visible,validRig:Object.values(a.animation?.bones||{}).every(b=>b.bone.quaternion.toArray().every(Number.isFinite))}))};
 }catch(error){console.error(error);$('start-label').textContent='Reload to retry';$('start').disabled=false;$('start').onclick=()=>location.reload();showToast('An asset could not load. Reload to try again.',30000);}}
 function keysClear(){Object.keys(keys).forEach(k=>keys[k]=false);jumpQueued=false;}
 function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-austin'));if(d&&Number.isFinite(d.distance)&&Number.isFinite(d.topSpeed)&&Number.isFinite(d.pickups))return d;}catch{}return {distance:0,topSpeed:0,pickups:0};}

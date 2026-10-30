@@ -13,7 +13,7 @@ export function stepHero(w,input,dt,collider=empty,physics=PHYSICS){
  if(w.status!=='running'||dt<=0)return;
  w.punchTime=Math.max(0,(w.punchTime||0)-dt);
  if(input.slam&&!w.grounded){w.flying=true;w.slamming=true;}
- if(!w.flying)return stepWorld(w,input,dt,collider,ATLAS_PHYSICS);
+ if(!w.flying)return stepWorld(w,{...input,phase:false,slow:false},dt,collider,ATLAS_PHYSICS);
  w.elapsed+=dt;w.worldTime+=dt;w.phasing=false;w.wallRunning=false;w.impact=Math.max(0,w.impact-dt*3);w.landingImpact=0;
  const right=Number(!!input.right)-Number(!!input.left),forward=Number(!!input.forward)-Number(!!input.backward),yaw=input.viewYaw||0;
  const vertical=Number(!!input.ascend)-Number(!!input.descend),moving=!!(right||forward||vertical);

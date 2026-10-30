@@ -1,15 +1,15 @@
 // Distances in game units; timers in active-play seconds (paused with the game).
 export const ABILITY=Object.freeze({teleportDistance:8,teleportCharges:3,teleportWindow:10,damage:80,force:18,chargeTime:1.2,cooldown:2.5,minimumCharge:.2,projectileSpeed:45,projectileRange:120});
-export function createAbilities(config=ABILITY){
+export function createAbilities(config=ABILITY,getHero=()=>'atlas'){
  let spent=Array(config.teleportCharges).fill(null),aimStarted=null,readyAt=0;
  const clean=now=>{spent=spent.map(t=>t!==null&&now-t>=config.teleportWindow?null:t);};
  return {
   teleports(now){clean(now);return {available:spent.filter(t=>t===null).length,pips:spent.map(t=>t===null?1:Math.min(1,(now-t)/config.teleportWindow))};},
-  spendTeleport(now){clean(now);const slot=spent.indexOf(null);if(slot<0)return false;spent[slot]=now;return true;},
-  beginAim(now){if(now<readyAt)return false;if(aimStarted===null)aimStarted=now;return true;},
+  spendTeleport(now){if(getHero()!=='atlas')return false;clean(now);const slot=spent.indexOf(null);if(slot<0)return false;spent[slot]=now;return true;},
+  beginAim(now){if(getHero()!=='atlas')return false;if(now<readyAt)return false;if(aimStarted===null)aimStarted=now;return true;},
   cancelAim(){aimStarted=null;},
-  status(now){const aiming=aimStarted!==null,charge=aiming?Math.min(1,(now-aimStarted)/config.chargeTime):0,cooldown=Math.max(0,readyAt-now);return {aiming,charge,cooldown,ready:aiming?charge>=1:cooldown===0};},
-  release(now){if(aimStarted===null)return null;const duration=now-aimStarted;aimStarted=null;if(duration<config.minimumCharge)return null;const power=Math.min(1,duration/config.chargeTime);readyAt=now+config.cooldown;return {power,damage:config.damage*power,force:config.force*power};}
+  status(now){if(getHero()!=='atlas')aimStarted=null;const aiming=aimStarted!==null,charge=aiming?Math.min(1,(now-aimStarted)/config.chargeTime):0,cooldown=Math.max(0,readyAt-now);return {aiming,charge,cooldown,ready:aiming?charge>=1:cooldown===0};},
+  release(now){if(getHero()!=='atlas'){aimStarted=null;return null;}if(aimStarted===null)return null;const duration=now-aimStarted;aimStarted=null;if(duration<config.minimumCharge)return null;const power=Math.min(1,duration/config.chargeTime);readyAt=now+config.cooldown;return {power,damage:config.damage*power,force:config.force*power};}
  };
 }
 export function findTeleport(w,direction,course,config=ABILITY){

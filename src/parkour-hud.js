@@ -6,6 +6,8 @@ export function createAbilityHUD(){
  const lines=document.createElement('div');lines.id='speed-lines';lines.setAttribute('aria-hidden','true');document.getElementById('parkour-scene').append(lines);
  let messageUntil=0;
  return {message(text,time){document.getElementById('ability-message').textContent=text;messageUntil=time+2;},update(w,abilities,time,reduced){
+  const atlas=w.hero==='atlas';panel.querySelectorAll('.ability-block').forEach((block,i)=>{if(i>0)block.hidden=!atlas;});document.querySelectorAll('#touch [data-key="e"],#touch [data-key="f"]').forEach(b=>b.hidden=!atlas);
+  document.getElementById('hint').textContent=atlas?'Atlas · R flight · Space / C altitude · V punch · X slam · E blink · F / RMB blast':'Speedster · WASD move · Space jump · Shift boost · Arrow keys / drag to look · Esc pause';
   const speed=Math.min(1,w.speed/10),color=speed>.85?'#88edff':speed>.5?'#e8c47f':'#c9aa88';document.getElementById('live-speed').textContent=`${w.speed.toFixed(1)} m/s`;const fill=document.getElementById('speed-fill');fill.style.width=`${speed*100}%`;fill.style.background=color;
   lines.style.opacity=reduced?'0':String(Math.max(0,(speed-.75)*1.2));
   const charges=abilities.teleports(time);document.querySelectorAll('.teleport-pip').forEach((pip,i)=>{pip.querySelector('i').style.transform=`scaleX(${charges.pips[i]})`;pip.classList.toggle('ready',charges.pips[i]===1);pip.setAttribute('aria-label',charges.pips[i]===1?'Teleport ready':`Refills in ${Math.ceil((1-charges.pips[i])*ABILITY.teleportWindow)} seconds`);});document.getElementById('teleport-status').textContent=`${charges.available} / ${ABILITY.teleportCharges} ready`;

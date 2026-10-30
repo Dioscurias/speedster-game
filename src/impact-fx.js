@@ -7,6 +7,7 @@ export class ImpactFX {
  }
  observe(w,emit){
   if(w.status!=='running')return;
+  if(w.hero!=='atlas'){this.wasGrounded=w.grounded;return;}
   const takeoff=this.wasGrounded&&!w.grounded&&w.vy>0&&!w.flying,land=!this.wasGrounded&&w.grounded;
   if(takeoff||land){const radius=w.hero==='atlas'?(land?2+3*(w.landingImpact||0):2.5):(land?1.2:0.8);const event={kind:takeoff?'launch':'land',x:w.x,y:w.y+.04,z:w.z,nx:0,ny:1,nz:0,radius};emit(event);}
   this.wasGrounded=w.grounded;

@@ -1,11 +1,12 @@
 import {toggleFlight,findPunchTarget} from './powerhouse.js';
 import {recolorSpeedsterSuit,speedsterColorForIndex} from './superhero.js';
 export function selectedHero(){try{return localStorage.getItem('speedster-hero')==='atlas'?'atlas':'speedster';}catch{return 'speedster';}}
-export function wireHeroControls({getWorld,getBuildings=()=>[],getMultiplayer,getRunner,effects,toast=()=>{}}){
+export function wireHeroControls({getWorld,getBuildings=()=>[],getMultiplayer,getRunner,onChange=()=>{},effects,toast=()=>{}}){
  const emit=event=>{const mp=getMultiplayer(),nonce=crypto.randomUUID();effects.add({...event,id:(mp?.id||'local')+':'+nonce});if(mp?.connected)mp.transport.impact({...event,nonce});};
  window.addEventListener('speedster:hero',event=>{
-  const w=getWorld();w.hero=event.detail==='atlas'?'atlas':'speedster';w.flying=false;w.slamming=false;w.punchTime=0;w.vy=0;
+  const w=getWorld();if(w.phasing&&w.phaseSafe)Object.assign(w,w.phaseSafe);w.phasing=false;w.phaseSafe=null;w.wallRunning=false;w.wall=null;w.boosting=false;w.slowing=false;w.vx=w.vz=0;w.speed=0;w.hero=event.detail==='atlas'?'atlas':'speedster';w.flying=false;w.slamming=false;w.punchTime=0;w.vy=0;
   const runner=getRunner();if(runner)recolorSpeedsterSuit(runner,w.hero==='atlas'?'#258cb7':speedsterColorForIndex(getMultiplayer()?.colorIndex||0));
+  onChange();
   try{localStorage.setItem('speedster-hero',w.hero);}catch{}
   toast(w.hero==='atlas'?'Atlas · R to fly · V to punch':'Speedster selected');
  });

@@ -12,26 +12,26 @@ import {JumpFX} from './jump-fx.js';
 import {Multiplayer} from './multiplayer.js';
 import {styleSuperhero} from './superhero.js';
 import {stepHero} from './powerhouse.js';
-import {poseHero} from './hero-visuals.js';
+import {poseHero,inspectHero} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
 import {selectedHero,wireHeroControls} from './hero-controls.js';
 
 document.title='The Last Household — Speedster Parkour';
 document.body.innerHTML=`<div id="parkour-scene"></div><header><strong>THE LAST HOUSEHOLD</strong><a href="/">← Austin</a><button id="pause">Pause</button></header><div id="progress"><span id="zone">Salt Steps</span><span id="score">0 / 15 orbs · Checkpoint 0 / 5</span></div><div id="hint">WASD move · Space jump (hold for height) · Arrow keys / drag to look · E blink · Hold F / right mouse to aim, release to blast · Esc pause</div><div id="touch"><button data-key="w">↑</button><button data-key="a">←</button><button data-key="s">↓</button><button data-key="d">→</button><button data-key=" ">Jump</button><button data-key="e">Blink</button><button data-key="f">Aim / fire</button></div><div id="overlay"><div class="card"><small>A STANDALONE PARKOUR JOURNEY</small><h1 id="title">The Last Household</h1><p id="description">Cross the red canyon beneath impossible monuments. Follow the golden orbs through five zones to the light. Blue rings save your progress.</p><label><input id="reduced" type="checkbox"> Reduced motion</label><label><input id="apex" type="checkbox"> Slow-motion beat at jump apex</label><label>World motion <input id="motion-speed" type="range" min="0" max="2" step="0.25" value="1" aria-label="World motion speed"></label><button id="play" disabled>Loading character…</button><button id="restart" hidden>Restart course</button></div></div>`;
-const $=id=>document.getElementById(id),keys={};let abilities=createAbilities(),abilityTime=0,teleportQueued=false,wasAiming=false;const hud=createAbilityHUD();let jumpQueued=false,view={yaw:0,pitch:.34},accumulator=0,last=performance.now(),apexBeat=0;
+const $=id=>document.getElementById(id),keys={};let abilities=createAbilities(undefined,()=>world.hero),abilityTime=0,teleportQueued=false,wasAiming=false;const hud=createAbilityHUD();let jumpQueued=false,view={yaw:0,pitch:.34},accumulator=0,last=performance.now(),apexBeat=0;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#f5a16e');scene.fog=new THREE.FogExp2('#f5a16e',.0018);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;$('parkour-scene').appendChild(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(58,1,.08,2500);scene.add(new THREE.HemisphereLight('#ffcfaa','#402b43',2));
 const sun=new THREE.DirectionalLight('#ffe0ad',3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:180});sun.shadow.normalBias=.03;scene.add(sun,sun.target);
 let course=createCourse(),map=buildParkourMap(scene,course),world=createWorld(course.spawn),runner=new THREE.Group(),animator,fx;scene.add(runner);const combat=new ParkourCombat(scene);course.blockedVolume=(...args)=>combat.blockedVolume(...args)||map.blockedVolume(...args);$('motion-speed').oninput=()=>course.motionSpeed=Number($('motion-speed').value);
 world.hero=selectedHero();let multiplayer;const impacts=new ImpactFX(scene);
-const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map.punchBuildings(),getMultiplayer:()=>multiplayer,getRunner:()=>runner,effects:impacts,toast:text=>window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}))});
+const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map.punchBuildings(),getMultiplayer:()=>multiplayer,getRunner:()=>runner,onChange:()=>{clearInput();animator?.reset(world);},effects:impacts,toast:text=>window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}))});
 $('reduced').checked=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function clearInput(){for(const k of Object.keys(keys))delete keys[k];jumpQueued=false;teleportQueued=false;wasAiming=false;abilities.cancelAim();}
 function overlay(title,description,button){$('title').textContent=title;$('description').textContent=description;$('play').textContent=button;$('overlay').hidden=false;}
 function pause(){if(world.status==='running'){world.status='paused';clearInput();overlay('Take a breath.','Your checkpoint is saved for this run.','Resume');$('restart').hidden=false;}else if(world.status==='paused')start();}
 function start(){if(world.status==='complete'){restart();return;}world.status='running';$('overlay').hidden=true;clearInput();last=performance.now();}
-function restart(){const old=map.root;scene.remove(old);const materials=new Set(),geometries=new Set();old.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);materials.add(o.material);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());course=createCourse();map=buildParkourMap(scene,course);world=createWorld(course.spawn);world.hero=selectedHero();world.status='running';view={yaw:0,pitch:.34};accumulator=apexBeat=0;abilities=createAbilities();abilityTime=0;combat.reset();course.blockedVolume=(...args)=>combat.blockedVolume(...args)||map.blockedVolume(...args);course.motionSpeed=Number($('motion-speed').value);animator.reset(world);fx.support=course.collider.surface;fx.reset(world);impacts.wasGrounded=true;$('overlay').hidden=true;clearInput();}
+function restart(){const old=map.root;scene.remove(old);const materials=new Set(),geometries=new Set();old.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);materials.add(o.material);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());course=createCourse();map=buildParkourMap(scene,course);world=createWorld(course.spawn);world.hero=selectedHero();world.status='running';view={yaw:0,pitch:.34};accumulator=apexBeat=0;abilities=createAbilities(undefined,()=>world.hero);abilityTime=0;combat.reset();course.blockedVolume=(...args)=>combat.blockedVolume(...args)||map.blockedVolume(...args);course.motionSpeed=Number($('motion-speed').value);animator.reset(world);fx.support=course.collider.surface;fx.reset(world);impacts.wasGrounded=true;$('overlay').hidden=true;clearInput();}
 $('pause').onclick=pause;$('play').onclick=start;$('restart').onclick=restart;
 window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if([' ','arrowleft','arrowright','arrowup','arrowdown'].includes(k))e.preventDefault();if(k==='escape'&&!e.repeat){pause();return;}if(world.status!=='running')return;if(k===' '&&!e.repeat)jumpQueued=true;if(k==='e'&&!e.repeat)teleportQueued=true;keys[k]=true;});
 window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);window.addEventListener('blur',()=>{clearInput();if(world.status==='running')pause();});
@@ -45,10 +45,12 @@ try{
 }catch(error){console.error(error);$('description').textContent='The character could not load. Reload to try again.';$('play').textContent='Reload';$('play').disabled=false;$('play').onclick=()=>location.reload();}
 window.__parkour={getState:()=>({...world}),getProgress:()=>course.update(world),getPlatforms:()=>course.platforms.map(p=>({...p})),getAbilities:()=>({teleports:abilities.teleports(abilityTime),blast:abilities.status(abilityTime)}),getCombat:()=>({projectiles:combat.shots.length,effects:combat.effects.length}),getTargets:()=>combat.targets.map(t=>({health:t.health,broken:t.broken,x:t.x,y:t.y,z:t.z}))};
 Object.assign(window.__parkour,{getPeers:()=>[...(multiplayer?.avatars.values()||[])].map(a=>a.state),getNetwork:()=>({status:multiplayer?.status,online:multiplayer?.online,health:multiplayer?.health}),getEffects:()=>({craters:impacts.scars.length})});
+if(import.meta.env.DEV)window.__parkour.debug={visuals:()=>inspectHero(runner,camera)};
 let lastHud=0;
 function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(rawDt,.05);last=now;let simulationDelta=0;
  if(animator&&world.status==='running'){
   abilityTime+=rawDt;
+  if(teleportQueued&&world.hero!=='atlas')teleportQueued=false;
   if(teleportQueued){teleportQueued=false;const direction=(keys.f||keys.aimMouse)?{x:Math.sin(view.yaw),z:-Math.cos(view.yaw)}:{x:Math.sin(world.heading),z:-Math.cos(world.heading)};const destination=findTeleport(world,direction,course);if(!destination)hud.message('Blink blocked · aim at a clear platform',abilityTime);else if(!abilities.spendTeleport(abilityTime))hud.message('Blink recharging',abilityTime);else{combat.blink(world,destination);Object.assign(world,destination,{vx:0,vy:0,vz:0,speed:0,grounded:true,jumpBuffer:0});fx.reset(world);}}
   view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt);
   const scale=apexBeat>0?.65:1;apexBeat=Math.max(0,apexBeat-dt);accumulator+=dt*scale;
@@ -66,9 +68,9 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
  const clearance=cameraClearance(world.x,world.z,target.x,target.z,course.collider,target.y);target.x*=clearance;target.z*=clearance;camera.position.lerp(target,1-Math.exp(-dt*10));camera.lookAt(Math.sin(view.yaw)*1.7,world.y+1.35,-Math.cos(view.yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,58+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
   const hand=new THREE.Vector3(.35,world.y+1.2,0);runner.updateMatrixWorld(true);animator.bones.RightHand?.bone.getWorldPosition(hand);hand.x+=world.x;hand.z+=world.z;
   combat.root.position.set(-world.x,0,-world.z);
-  const aimTarget=combat.aim(camera,hand,world,map),held=world.status==='running'&&!!(keys.f||keys.aimMouse);
+  const aimTarget=combat.aim(camera,hand,world,map),held=world.hero==='atlas'&&world.status==='running'&&!!(keys.f||keys.aimMouse);
   if(held&&!wasAiming)abilities.beginAim(abilityTime);
-  if(!held&&wasAiming&&world.status==='running'){const shot=abilities.release(abilityTime);if(shot)combat.fire(hand,aimTarget,shot);}
+  if(!held&&wasAiming&&world.hero==='atlas'&&world.status==='running'){const shot=abilities.release(abilityTime);if(shot)combat.fire(hand,aimTarget,shot);}
   wasAiming=held;const state=abilities.status(abilityTime);
   combat.update(simulationDelta,world,course,map,state.aiming,state.charge,hand,aimTarget,$('reduced').checked);
   if(!$('reduced').checked)camera.position.x+=Math.sin(world.worldTime*97)*combat.shake;

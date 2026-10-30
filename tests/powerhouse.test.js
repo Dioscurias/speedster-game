@@ -37,3 +37,6 @@ test('parkour flight respects monuments without inventing a floor across gaps',(
  assert.equal(map.flightCollider.blocked(-95,-95,35),true);
  assert.equal(map.flightCollider.blocked(-95,-95,0),false,'space below the table stays open');
 });
+test('Atlas cannot inherit Speedster phase or slow time while grounded',()=>{
+ const w=world();stepHero(w,{phase:true,slow:true},1/120);assert.equal(w.phasing,false);assert.equal(w.slowing,false);
+});
