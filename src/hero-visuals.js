@@ -34,3 +34,8 @@ export function inspectHero(model,camera){
  const bounds=new THREE.Box3().setFromObject(model);
  return {visibleMeshes,finite:finite&&[...bounds.min.toArray(),...bounds.max.toArray()].every(Number.isFinite),height:bounds.max.y-bounds.min.y,inView:camera?new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse)).intersectsBox(bounds):true};
 }
+
+export function stabilizeFlightCamera(camera,target,w){
+ if(w.hero!=='atlas'||!w.flying)return;
+ camera.position.y=clamp(camera.position.y,target.y-3,target.y+3);
+}

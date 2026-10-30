@@ -2,8 +2,9 @@ import {stepWorld,PHYSICS,createCollider} from './game.js';
 
 export const ATLAS_PHYSICS=Object.freeze({...PHYSICS,runSpeed:24,boostSpeed:65,jumpSpeed:28,jumpCutSpeed:20,airAcceleration:25,wallRunning:false});
 const empty=createCollider();
-export function toggleFlight(w){
+export function toggleFlight(w,collider=empty){
  if(w.hero!=='atlas'||w.status!=='running')return false;
+ if(!w.flying&&w.grounded){for(let lift=.1;lift<=1.51;lift+=.1){if(collider.blocked?.(w.x,w.z,w.y+lift+1.86)||collider.blocked?.(w.x,w.z,w.y+lift+.05))return false;}}
  w.airBraking=false;w.flightBank=0;w.flying=!w.flying;w.slamming=false;w.wallRunning=false;w.wall=null;w.vy=0;
  if(w.flying){w.y+=w.grounded?1.5:0;w.grounded=false;}
  return w.flying;
@@ -59,4 +60,12 @@ export function findPunchTarget(w,buildings,reach=4.8){
   }
  }
  return closest;
+}
+
+// A narrow assist cone makes close wall strikes reliable without hitting behind the player.
+export function findPunchInCone(w,buildings,reach=4.8){
+ const direct=findPunchTarget(w,buildings,reach);if(direct)return direct;
+ let best=null;
+ for(const offset of [-.18,-.09,.09,.18]){const hit=findPunchTarget({...w,heading:w.heading+offset},buildings,reach);if(hit&&(!best||hit.distance<best.distance))best=hit;}
+ return best;
 }

@@ -14,7 +14,7 @@ import {mountMapOverview} from './map-overview.js';
 import {styleSuperhero,speedsterColorForIndex} from './superhero.js';
 import {Multiplayer} from './multiplayer.js';
 import {stepHero} from './powerhouse.js';
-import {poseHero,inspectHero} from './hero-visuals.js';
+import {poseHero,inspectHero,stabilizeFlightCamera} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
 import {selectedHero,wireHeroControls} from './hero-controls.js';
 
@@ -22,7 +22,7 @@ const $=id=>document.getElementById(id),keys={};
 let jumpFX;const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let world=createWorld(),view={yaw:0,pitch:.34},map,city,loaded=false,quality=true,runner,animator,lightning,multiplayer,jumpQueued=false,toastUntil=0,dead=false,lastHealth=100;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b9d4e7');scene.fog=new THREE.FogExp2('#b9d4e7',.00165);
-const impacts=new ImpactFX(scene);const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map?.buildings||[],getMultiplayer:()=>multiplayer,getRunner:()=>runner,onChange:()=>{keysClear();animator?.reset(world);},effects:impacts,toast:showToast});
+const impacts=new ImpactFX(scene);const heroControls=wireHeroControls({getWorld:()=>world,getBuildings:()=>map?.buildings||[],getCollider:()=>map?.collider,getMultiplayer:()=>multiplayer,getRunner:()=>runner,getAimYaw:()=>view.yaw,onChange:()=>{keysClear();animator?.reset(world);},effects:impacts,toast:showToast});
 const newWorld=spawn=>({...createWorld(spawn),hero:selectedHero(),flying:false});
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;$('scene').appendChild(renderer.domElement);
 const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromScene(new RoomEnvironment(),.04);scene.environment=environment.texture;scene.environmentIntensity=.65;pmrem.dispose();
@@ -99,7 +99,7 @@ function updateScene(dt){
  const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
  const quake=impacts.camera(reducedMotion);target.x+=quake.shake;target.y+=quake.dip;
  const clear=world.phasing?1:cameraClearance(world.x,world.z,target.x,target.z,map.collider,world.y+1.4);target.x*=clear;target.z*=clear;
- camera.position.lerp(target,1-Math.exp(-dt*10));const safe=world.phasing?1:cameraClearance(world.x,world.z,camera.position.x,camera.position.z,map.collider,camera.position.y);camera.position.x*=safe;camera.position.z*=safe;
+ camera.position.lerp(target,1-Math.exp(-dt*10));stabilizeFlightCamera(camera,target,world);const safe=world.phasing?1:cameraClearance(world.x,world.z,camera.position.x,camera.position.z,map.collider,camera.position.y);camera.position.x*=safe;camera.position.z*=safe;
  camera.lookAt(Math.sin(yaw)*1.7,world.y+1.35,-Math.cos(yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,(world.boosting?76:58)+jumpCamera.fov,Math.min(1,dt*5));camera.updateProjectionMatrix();
 }
 $('speed-bars').innerHTML='<i></i>'.repeat(20);$('start').onclick=()=>{if(loaded)reset();};$('pause').onclick=pause;$('resume').onclick=pause;$('restart').onclick=reset;

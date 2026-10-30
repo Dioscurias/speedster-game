@@ -26,3 +26,9 @@ Validation: 131 unit tests; production build; existing both-map responsive brows
 ## Atlas handling pass
 
 Added B air brake (also available on the Atlas action bar), more responsive movement release, boost exhaustion latch until Shift is released, and a distinct committed slam pose. Slam suppresses lateral steering and clears horizontal momentum on landing. Atlas status reports flight/braking/slam/grounded or the exhausted-boost release instruction. Braking state is replicated for other players' flight poses. Regression tests exercise stopping boosted flight, safe slam landing and boost recovery.
+
+## Atlas camera and targeting pass
+
+Punch initiation now faces the camera aim rather than the last movement heading. A narrow ±0.18 radian assist cone finds nearby wall edges when the centre ray narrowly misses; it keeps the existing reach limit and never hits behind the player. Atlas's flight camera bounds vertical lag to three metres around its desired chase position during fast climbs/dives. Takeoff checks the full 1.5 m lift with head/feet clearance before changing position or flight state and reports insufficient clearance without moving the character.
+
+Regression coverage: fast-climb/dive camera bounds (Speedster unaffected), off-centre/behind/out-of-range punches, and low-ceiling takeoff refusal. Existing character-power and real two-player checks are rerun on both maps.

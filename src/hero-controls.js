@@ -1,7 +1,7 @@
-import {toggleFlight,findPunchTarget} from './powerhouse.js';
+import {toggleFlight,findPunchInCone} from './powerhouse.js';
 import {recolorSpeedsterSuit,speedsterColorForIndex} from './superhero.js';
 export function selectedHero(){try{return localStorage.getItem('speedster-hero')==='atlas'?'atlas':'speedster';}catch{return 'speedster';}}
-export function wireHeroControls({getWorld,getBuildings=()=>[],getMultiplayer,getRunner,onChange=()=>{},effects,toast=()=>{}}){
+export function wireHeroControls({getWorld,getBuildings=()=>[],getCollider=()=>undefined,getMultiplayer,getRunner,getAimYaw=()=>getWorld().heading,onChange=()=>{},effects,toast=()=>{}}){
  const emit=event=>{const mp=getMultiplayer(),nonce=crypto.randomUUID();effects.add({...event,id:(mp?.id||'local')+':'+nonce});if(mp?.connected)mp.transport.impact({...event,nonce});};
  window.addEventListener('speedster:hero',event=>{
   const w=getWorld();if(w.phasing&&w.phaseSafe)Object.assign(w,w.phaseSafe);w.phasing=false;w.phaseSafe=null;w.wallRunning=false;w.wall=null;w.boosting=false;w.slowing=false;w.vx=w.vz=0;w.speed=0;w.hero=event.detail==='atlas'?'atlas':'speedster';w.flying=false;w.slamming=false;w.punchTime=0;w.punchPending=false;w.slamRequested=false;w.flightBank=0;w.airBraking=false;w.boostExhausted=false;w.vy=0;
@@ -15,10 +15,10 @@ export function wireHeroControls({getWorld,getBuildings=()=>[],getMultiplayer,ge
   const w=getWorld();if(w.status!=='running'||w.hero!=='atlas')return;
   const key=event.key.toLowerCase();
   if(key==='x'){w.slamRequested=true;}
-  if(key==='r'){toggleFlight(w);toast(w.flying?'Flight · Space up · C down · Shift boost · B brake':'Flight disengaged');}
+  if(key==='r'){const wasFlying=w.flying;toggleFlight(w,getCollider());toast(w.flying?'Flight · Space up · C down · Shift boost · B brake':wasFlying?'Flight disengaged':'Not enough clearance to take off');}
   if(key==='v'&&!(w.punchTime>0)){
-   w.punchTime=.4;w.punchPending=true;
+   w.heading=getAimYaw();w.punchTime=.4;w.punchPending=true;
   }
  });
- return {emit,update(){const w=getWorld();if(!w.punchPending||w.status!=='running')return;if(w.hero!=='atlas'){w.punchPending=false;return;}if(w.punchTime>.22)return;w.punchPending=false;const hit=findPunchTarget(w,getBuildings());if(hit){emit(hit);toast('Impact');}else toast('Punch · move within reach of a wall');}};
+ return {emit,update(){const w=getWorld();if(!w.punchPending||w.status!=='running')return;if(w.hero!=='atlas'){w.punchPending=false;return;}if(w.punchTime>.22)return;w.punchPending=false;const hit=findPunchInCone(w,getBuildings());if(hit){emit(hit);toast('Impact');}else toast('Punch · move within reach of a wall');}};
 }
