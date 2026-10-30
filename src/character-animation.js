@@ -25,6 +25,16 @@ export class CharacterAnimation{
   this.rotation.setFromAxisAngle(this.bodyAxis,angle);
   record.bone.quaternion.premultiply(this.rotation);
  }
+ // Align a limb using actual joint positions rather than asset-dependent Euler guesses.
+ aimLimb(name,childName,direction){
+  const bone=this.bones[name]?.bone,child=this.bones[childName]?.bone;if(!bone||!child)return;
+  this.model.updateWorldMatrix(true,true);
+  const origin=bone.getWorldPosition(new THREE.Vector3()),current=child.getWorldPosition(new THREE.Vector3()).sub(origin).normalize();
+  const desired=new THREE.Vector3(...direction).normalize().applyQuaternion(this.model.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  const delta=new THREE.Quaternion().setFromUnitVectors(current,desired);
+  const target=delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
+  const parent=bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();bone.quaternion.copy(parent.multiply(target)).normalize();
+ }
  update(world,input,dt){
   if(world.status==='paused'||dt<=0)return this.state;
   this.restore();updateAnimation(this.state,world,input,dt);this.applyWeights();this.mixer.update(dt);this.capture();
@@ -32,6 +42,7 @@ export class CharacterAnimation{
   if(world.hero==='atlas'&&world.flying){s.tuck=0;s.reach=0;s.air=1;s.lean=0;s.bank=0;}
   // Hold a sampled neutral pose in flight so idle sway cannot fight the jump.
   for(const r of Object.values(this.bones))r.bone.quaternion.slerp(r.neutral,s.air);
+  if(world.hero==='atlas'&&world.flying)return s;
   // Additive poses use the fresh clip pose every frame, never last frame's
   // offsets. This also supports bones omitted by an animation track.
   this.offset('Spine',-s.lean*.45,0,s.bank*.5);

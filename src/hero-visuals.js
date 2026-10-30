@@ -13,13 +13,16 @@ export function poseHero(animator,model,w){
  model.rotation.x=pose.pitch;model.rotation.z=pose.bank;
  if(atlas&&w.flying){
   animator.bodyBend('Spine',-.06);
+  const travel=clamp(Math.hypot(w.vx||0,w.vz||0)/55,0,1);
   for(const side of ['Left','Right']){
-   const sign=side==='Left'?-1:1;
-   animator.bodyBend(side+'Arm',-.15);
-   animator.bodyBend(side+'Arm',sign*pose.armSpread,'z');
-   animator.bodyBend(side+'ForeArm',.38);
-   animator.bodyBend(side+'UpLeg',.02);
-   animator.bodyBend(side+'Leg',-.15);
+   const sign=side==='Left'?1:-1;
+   // Hips remain narrow; a slight knee bend avoids the airborne running stance.
+   animator.aimLimb?.(side+'UpLeg',side+'Leg',[-sign*.035,-1,.045]);
+   animator.aimLimb?.(side+'Leg',side+'Foot',[sign*.015,-1,-.07]);
+   const upper=w.boosting?[sign*.06,-1+travel*2,.07]:[sign*(.10+travel*.85),-1+travel*.85,.06];
+   const lower=w.boosting?[sign*.035,-1+travel*2,.10]:[sign*(.04+travel*.85),-1+travel*.85,.12];
+   animator.aimLimb?.(side+'Arm',side+'ForeArm',upper);
+   animator.aimLimb?.(side+'ForeArm',side+'Hand',lower);
   }
  }
  if(atlas&&w.punchTime>0){
