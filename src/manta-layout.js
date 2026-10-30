@@ -20,6 +20,7 @@ export function mountGameLayout(parkour,autoplay){
  for(const selector of parkour?['#touch']:['.touch-controls','.view-buttons']){const node=document.querySelector(selector);if(node)touch.append(node);}
  for(const node of originals)if(node.parentElement===document.body&&node.id!=='info-dialog')legacy.append(node);
  document.body.append(legacy,shell);shell.append(touch);
+ if(parkour){const abilities=document.getElementById('ability-hud');if(abilities)shell.append(abilities);}
  const hud=mountMantaHUD(shell,{parkour,drawRadar:parkour?drawCourseRadar:undefined});
  const $=id=>document.getElementById(id),root=hud.element,getState=()=>parkour?window.__parkour?.getState():window.__velocity?.getState();
  const pause=()=>{if(getState()?.status==='running')$('pause').click();};

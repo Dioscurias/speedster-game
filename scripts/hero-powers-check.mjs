@@ -15,16 +15,16 @@ try{
  assert.equal(after.w.x,before.w.x);assert.equal(after.w.z,before.w.z);assert.equal(after.abilities.teleports.available,3);assert.equal(after.combat.projectiles,0);assert.equal(after.abilities.blast.aiming,false);
  }
  // Select through the same event dispatched by both character pickers.
- await p.evaluate(()=>window.dispatchEvent(new CustomEvent('speedster:hero',{detail:'atlas'})));await p.waitForTimeout(200);
+ await p.locator('#hud-pause').click();await p.selectOption('#menu-hero','atlas');await p.locator(map==='parkour'?'#play':'#resume').click();await p.waitForTimeout(200);
  await p.keyboard.press('r');await p.keyboard.down(' ');await p.waitForTimeout(700);await p.keyboard.up(' ');await p.waitForTimeout(150);
  assert.equal((await read()).w.flying,true);assert.ok((await read()).w.y>4);await visible();
  await p.keyboard.down('Shift');await p.keyboard.down(' ');await p.waitForTimeout(800);await p.keyboard.up(' ');await p.keyboard.up('Shift');await p.waitForTimeout(150);await visible();
  if(map==='parkour'){
- await p.keyboard.down('f');await p.waitForTimeout(1300);assert.equal((await read()).abilities.blast.aiming,true);await p.keyboard.up('f');await p.waitForTimeout(80);assert.ok((await read()).abilities.blast.cooldown>0);await visible();
+ await p.locator('[data-hero-key="f"]').click({delay:1300});await p.waitForTimeout(80);assert.equal(await p.locator('#ability-hud').isVisible(),true);assert.ok((await read()).abilities.blast.cooldown>0);await visible();
  }
- await p.keyboard.down('x');await p.waitForTimeout(1200);await p.keyboard.up('x');await p.waitForTimeout(300);await visible();
+ await p.keyboard.press('x');await p.waitForTimeout(70);assert.equal((await read()).w.slamming,true);await p.waitForTimeout(1200);await p.waitForTimeout(300);await visible();
  if(map==='parkour'){await p.waitForFunction(()=>window.__parkour.getState().grounded);const before=await read();await p.keyboard.press('e');await p.waitForTimeout(150);const after=await read();assert.equal(after.abilities.teleports.available,2);assert.ok(Math.hypot(after.w.x-before.w.x,after.w.z-before.w.z)>7);await visible();}
- await p.evaluate(()=>window.dispatchEvent(new CustomEvent('speedster:hero',{detail:'speedster'})));await p.waitForTimeout(200);assert.equal((await read()).w.flying,false);assert.equal((await read()).w.phasing,false);await visible();
+ await p.locator('#hud-pause').click();await p.selectOption('#menu-hero','speedster');await p.locator(map==='parkour'?'#play':'#resume').click();await p.waitForTimeout(200);assert.equal((await read()).w.flying,false);assert.equal((await read()).w.phasing,false);await visible();
  await p.screenshot({path:`/private/tmp/hero-powers-${map}.png`});await p.close();
  }
  assert.deepEqual(errors,[]);console.log('PASS: Speedster denied extra powers; Atlas flight, boosted ascent, charged blast, slam and character switches keep finite visible models on both maps.');

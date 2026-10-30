@@ -78,7 +78,7 @@ export function stepWorld(s,input,dt,collider=empty,physics=PHYSICS){
    if(s.phasing&&building)continue;
    s.x+=contact.nx*(contact.depth+.001);s.z+=contact.nz*(contact.depth+.001);
    const normalSpeed=s.vx*contact.nx+s.vz*contact.nz;
-   if(building&&contact.object.wallRunnable!==false&&!s.phasing&&!s.grounded&&s.y>.15&&moving&&normalSpeed< -10&&s.wallCooldown===0){
+   if(physics.wallRunning!==false&&building&&contact.object.wallRunnable!==false&&!s.phasing&&!s.grounded&&s.y>.15&&moving&&normalSpeed< -10&&s.wallCooldown===0){
     s.wallRunning=true;s.wall={nx:contact.nx,nz:contact.nz,object:contact.object,climb:Math.max(12,-normalSpeed*.8)};s.vx=s.vz=0;s.vy=s.wall.climb;s.heading=Math.atan2(-contact.nx,contact.nz);
    }else if(normalSpeed<0){s.vx-=normalSpeed*contact.nx;s.vz-=normalSpeed*contact.nz;if(normalSpeed < -8)s.impact=Math.min(1,-normalSpeed/50);}
   }

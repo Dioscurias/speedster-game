@@ -11,7 +11,7 @@ export function sanitizeSnapshot(input={}){
   return {
     x:clamp(number(input.x),-5000,5000),
     z:clamp(number(input.z),-5000,5000),
-    y:clamp(number(input.y),0,600),
+    y:clamp(number(input.y),-100,600),
     vy:clamp(number(input.vy),-150,250),
     vx:clamp(number(input.vx),-300,300),
     vz:clamp(number(input.vz),-300,300),
@@ -20,8 +20,10 @@ export function sanitizeSnapshot(input={}){
     flying:input.hero==='atlas'&&Boolean(input.flying),
     boosting:Boolean(input.boosting),
     grounded:Boolean(input.grounded),
-    punchTime:clamp(number(input.punchTime),0,.4),
-    phasing:Boolean(input.phasing)
+    punchTime:input.hero==='atlas'?clamp(number(input.punchTime),0,.4):0,
+    slamming:input.hero==='atlas'&&Boolean(input.slamming),
+    flightBank:input.hero==='atlas'?clamp(number(input.flightBank),-.6,.6):0,
+    phasing:input.hero!=='atlas'&&Boolean(input.phasing)
   };
 }
 

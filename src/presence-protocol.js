@@ -2,7 +2,7 @@ export const ROOM_CAPACITY=20;
 export const ROOM_URL='wss://speedster-rooms.argus-global.workers.dev';
 export function sanitizeImpact(input,player,now=Date.now()){
  if(!input||!['punch','land','launch'].includes(input.kind))return null;
- if(input.kind==='punch'&&player.hero!=='atlas')return null;
+ if(player.hero!=='atlas')return null;
  const values=['x','y','z','nx','ny','nz','radius'];if(values.some(k=>!Number.isFinite(input[k])))return null;
  if(Math.hypot(input.x-player.x,input.z-player.z,input.y-player.y)>7)return null;
  const n=Math.hypot(input.nx,input.ny,input.nz);if(n<.9||n>1.1)return null;

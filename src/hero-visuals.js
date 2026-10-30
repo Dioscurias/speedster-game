@@ -7,7 +7,8 @@ export function flightPose(w){
  return {pitch:travel*(-(w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
 }
 export function poseHero(animator,model,w){
- const atlas=w.hero==='atlas',pose=flightPose(w);model.scale.set(atlas?1.05:1,atlas?1.03:1,atlas?1.04:1);
+ if(w.hero!=='atlas')return;
+ const atlas=true,pose=flightPose(w);model.scale.set(atlas?1.05:1,atlas?1.03:1,atlas?1.04:1);
  model.rotation.x=pose.pitch;model.rotation.z=pose.bank;
  if(atlas&&w.flying){
   animator.bodyBend('Spine',-.06);

@@ -49,7 +49,7 @@ if(import.meta.env.DEV)window.__parkour.debug={visuals:()=>inspectHero(runner,ca
 let lastHud=0;
 function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(rawDt,.05);last=now;let simulationDelta=0;
  if(animator&&world.status==='running'){
-  abilityTime+=rawDt;
+  abilityTime+=dt;
   if(teleportQueued&&world.hero!=='atlas')teleportQueued=false;
   if(teleportQueued){teleportQueued=false;const direction=(keys.f||keys.aimMouse)?{x:Math.sin(view.yaw),z:-Math.cos(view.yaw)}:{x:Math.sin(world.heading),z:-Math.cos(world.heading)};const destination=findTeleport(world,direction,course);if(!destination)hud.message('Blink blocked · aim at a clear platform',abilityTime);else if(!abilities.spendTeleport(abilityTime))hud.message('Blink recharging',abilityTime);else{combat.blink(world,destination);Object.assign(world,destination,{vx:0,vy:0,vz:0,speed:0,grounded:true,jumpBuffer:0});fx.reset(world);}}
   view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt);
@@ -57,13 +57,13 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
   while(accumulator>=1/120&&world.status==='running'){
    course.advance(1/120,world);const vy=world.vy;stepHero(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,boost:keys.shift,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,world.hero==='atlas'?map.flightCollider:course.collider,PARKOUR);heroControls.update();impacts.observe(world,heroControls.emit);jumpQueued=false;simulationDelta+=1/120;accumulator-=1/120;
    if($('apex').checked&&!$('reduced').checked&&vy>0&&world.vy<=0&&!world.grounded)apexBeat=.06;
-   const result=course.update(world);if(result.respawned){world.hero=selectedHero();world.flying=false;world.slamming=false;abilities.cancelAim();wasAiming=false;animator.reset(world);fx.reset(world);impacts.wasGrounded=true;view.yaw=0;apexBeat=0;}
+   const result=course.update(world);if(result.respawned){world.hero=selectedHero();world.flying=false;world.slamming=false;world.slamRequested=false;world.punchPending=false;world.punchTime=0;world.flightBank=0;clearInput();abilities.cancelAim();wasAiming=false;animator.reset(world);fx.reset(world);impacts.wasGrounded=true;view.yaw=0;apexBeat=0;}
    if(result.complete){clearInput();overlay('You made it.',`${result.collected} / ${result.total} orbs · ${world.elapsed.toFixed(1)} seconds${result.collected===result.total?' · Perfect clear':''}`,'Play again');$('restart').hidden=true;}
   }
  }else accumulator=0;
  const progress=course.update(world);map.update(world,world.worldTime,progress.zone);$('zone').textContent=progress.name;$('score').textContent=`${progress.collected} / 15 orbs · Checkpoint ${progress.zone} / 5`;
  if(animator){const pose=animator.update(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,viewYaw:view.yaw},simulationDelta);if(abilities.status(abilityTime).aiming){animator.bodyBend('RightArm',-1.2);animator.bodyBend('RightForeArm',-.2);}runner.position.set(0,world.y-pose.crouch*.04,0);runner.rotation.y=-world.heading;fx.update(world,simulationDelta,$('reduced').checked);}
- if(animator&&world.status==='running')poseHero(animator,runner,world);multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
+ if(animator&&world.status==='running'&&simulationDelta>0)poseHero(animator,runner,world);multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
  const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=world.boosting?10:7,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake,world.y+1.25+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
  const clearance=cameraClearance(world.x,world.z,target.x,target.z,course.collider,target.y);target.x*=clearance;target.z*=clearance;camera.position.lerp(target,1-Math.exp(-dt*10));camera.lookAt(Math.sin(view.yaw)*1.7,world.y+1.35,-Math.cos(view.yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,58+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
   const hand=new THREE.Vector3(.35,world.y+1.2,0);runner.updateMatrixWorld(true);animator.bones.RightHand?.bone.getWorldPosition(hand);hand.x+=world.x;hand.z+=world.z;

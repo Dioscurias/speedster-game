@@ -11,6 +11,7 @@ export function mountHeroPicker({loader,menu,shell,getState,parkour}){
  create(loader,'join-hero');create(menu,'menu-hero');
  const bar=document.createElement('section');bar.className='hero-actions';bar.setAttribute('aria-label','Atlas abilities');
  bar.innerHTML='<span class="hero-status">ATLAS <b data-altitude>0 m</b></span><button data-hero-key="r">R <span>Fly</span></button><button data-hero-key=" ">↑ <span>Rise</span></button><button data-hero-key="c">C <span>Descend</span></button><button data-hero-key="shift">⇧ <span>Boost</span></button><button data-hero-key="v">V <span>Punch</span></button><button data-hero-key="x">X <span>Slam</span></button>';
+ if(parkour)bar.insertAdjacentHTML('beforeend','<button data-hero-key="e">E <span>Blink</span></button><button data-hero-key="f">F <span>Hold blast</span></button>');
  shell.append(bar);
  for(const button of bar.querySelectorAll('button')){
   const key=button.dataset.heroKey;button.onpointerdown=e=>{e.preventDefault();button.setPointerCapture(e.pointerId);window.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));};

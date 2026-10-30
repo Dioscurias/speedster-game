@@ -58,7 +58,7 @@ export class Multiplayer{
     for(const player of players){
       let avatar=this.avatars.get(player.id);
       if(!avatar){avatar=this.createAvatar(player.id,player.colorIndex);this.avatars.set(player.id,avatar);this.scene.add(avatar.root);}
-      if(avatar.colorIndex!==player.colorIndex||avatar.hero!==player.hero){recolorSpeedsterSuit(avatar.model,player.hero==='atlas'?'#258cb7':speedsterColorForIndex(player.colorIndex));avatar.colorIndex=player.colorIndex;avatar.hero=player.hero;}
+      if(avatar.colorIndex!==player.colorIndex||avatar.hero!==player.hero){if(avatar.hero!==player.hero){avatar.model.rotation.x=avatar.model.rotation.z=0;avatar.model.scale.setScalar(1);avatar.animation?.reset({...createWorld(),...player});}recolorSpeedsterSuit(avatar.model,player.hero==='atlas'?'#258cb7':speedsterColorForIndex(player.colorIndex));avatar.colorIndex=player.colorIndex;avatar.hero=player.hero;}
       if(!avatar.state)avatar.position.set(player.x,player.y,player.z);
       avatar.state=player;avatar.receivedAt=performance.now();
     }

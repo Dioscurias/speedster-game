@@ -1,6 +1,6 @@
 import {stepWorld,PHYSICS,createCollider} from './game.js';
 
-export const ATLAS_PHYSICS=Object.freeze({...PHYSICS,runSpeed:24,boostSpeed:65,jumpSpeed:28,jumpCutSpeed:20,airAcceleration:25});
+export const ATLAS_PHYSICS=Object.freeze({...PHYSICS,runSpeed:24,boostSpeed:65,jumpSpeed:28,jumpCutSpeed:20,airAcceleration:25,wallRunning:false});
 const empty=createCollider();
 export function toggleFlight(w){
  if(w.hero!=='atlas'||w.status!=='running')return false;
@@ -12,7 +12,8 @@ export function stepHero(w,input,dt,collider=empty,physics=PHYSICS){
  if(w.hero!=='atlas')return stepWorld(w,input,dt,collider,physics);
  if(w.status!=='running'||dt<=0)return;
  w.punchTime=Math.max(0,(w.punchTime||0)-dt);
- if(input.slam&&!w.grounded){w.flying=true;w.slamming=true;}
+ const slam=!!(input.slam||w.slamRequested);w.slamRequested=false;
+ if(slam&&!w.grounded){w.flying=true;w.slamming=true;}
  if(!w.flying)return stepWorld(w,{...input,phase:false,slow:false},dt,collider,ATLAS_PHYSICS);
  w.elapsed+=dt;w.worldTime+=dt;w.phasing=false;w.wallRunning=false;w.impact=Math.max(0,w.impact-dt*3);w.landingImpact=0;
  const right=Number(!!input.right)-Number(!!input.left),forward=Number(!!input.forward)-Number(!!input.backward),yaw=input.viewYaw||0;

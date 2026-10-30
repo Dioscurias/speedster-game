@@ -91,8 +91,8 @@ function updateScene(dt){
  if(world.status!=='paused')runner.quaternion.slerp(rotation,1-Math.exp(-animationDt*26));
  runner.traverse(o=>{if(o.isMesh){o.material.transparent=world.phasing;o.material.opacity=world.phasing?.48+.12*Math.sin(world.worldTime*137):1;o.material.depthWrite=!world.phasing;}});
  $('phase').classList.toggle('active',world.phasing);$('phase').setAttribute('aria-pressed',String(world.phasing));
- lightning.update(world,runner);jumpFX.update(world,animationDt,reducedMotion);
- if(active)poseHero(animator,runner,world);impacts.update(world,active?dt:0);
+ lightning.update(world.hero==='atlas'?{...world,speed:0,boosting:false,phasing:false}:world,runner);jumpFX.update(world,animationDt,reducedMotion);
+ if(active&&animationDt>0)poseHero(animator,runner,world);impacts.update(world,active?dt:0);
  multiplayer?.update(dt);
  const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=world.boosting?10:7,horizontal=Math.cos(pitch)*distance;
  const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,world.y+1.25+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);

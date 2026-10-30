@@ -15,3 +15,9 @@
 #course-overview{display:block;width:100%;height:min(60vh,650px);background:#161c24;touch-action:none;border-radius:8px}
 @media(max-width:600px){.hero-actions{bottom:230px;gap:3px;padding:5px;width:max-content}.hero-actions button{min-width:37px;padding:6px 5px}.hero-status{padding:0 4px;font-size:8px}.hero-picker{max-width:100%}.hero-actions button span{font-size:8px}}
 @media(max-height:500px){.hero-actions{bottom:10px;left:48%;max-width:50%;gap:3px;padding:4px}.hero-status{display:none}.hero-actions button{min-width:32px;padding:4px}.hero-picker{margin:6px 0;font-size:10px;gap:4px}.hero-picker select{padding:7px;min-height:34px}.hero-picker small{display:none}.manta-loading .hero-picker{margin:5px auto 0}}
+
+.hero-actions{flex-wrap:wrap;justify-content:center;width:max-content}
+.manta-game #ability-hud{position:absolute;z-index:10;top:150px;left:28px;width:170px;pointer-events:none}
+.manta-game #ability-hud .ability-block:first-child{display:none}
+@media(max-width:600px){.hero-actions{max-width:340px;width:calc(100% - 32px);bottom:160px}.manta-game #ability-hud{top:108px;left:16px;width:126px;gap:10px}}
+@media(max-height:500px){.hero-actions{max-width:55%;bottom:12px}.manta-game #ability-hud{top:100px;left:12px;width:115px;gap:8px}}
