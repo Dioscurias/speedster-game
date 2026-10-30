@@ -120,7 +120,7 @@ new ResizeObserver(()=>{const r=$('scene').getBoundingClientRect();renderer.setS
 let last=performance.now(),lastHUD=0,lastSave=0,accumulator=0;
 function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.1);last=now;
  if(loaded){if(world.status==='running'){view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt);accumulator+=dt;
-  while(accumulator>=1/120){stepHero(world,{left:keys.a,right:keys.d,forward:keys.w,backward:keys.s,boost:keys.shift,slow:keys.e,phase:world.hero!=='atlas'&&keys.q,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,map.collider);impacts.observe(world,heroControls.emit);jumpQueued=false;contacts();accumulator-=1/120;}
+  while(accumulator>=1/120){stepHero(world,{left:keys.a,right:keys.d,forward:keys.w,backward:keys.s,boost:keys.shift,slow:keys.e,phase:world.hero!=='atlas'&&keys.q,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,map.collider);heroControls.update();impacts.observe(world,heroControls.emit);jumpQueued=false;contacts();accumulator-=1/120;}
  }else{accumulator=0;jumpQueued=false;}
  multiplayer?.poll(now);updateScene(dt);if(now-lastHUD>100){updateHUD();lastHUD=now;}if(world.status==='running'&&now-lastSave>5000){saveRecords();lastSave=now;}}
  if(now>toastUntil)$('toast').style.opacity='0';renderer.render(scene,camera);

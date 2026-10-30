@@ -4,7 +4,7 @@ export const ATLAS_PHYSICS=Object.freeze({...PHYSICS,runSpeed:24,boostSpeed:65,j
 const empty=createCollider();
 export function toggleFlight(w){
  if(w.hero!=='atlas'||w.status!=='running')return false;
- w.flying=!w.flying;w.slamming=false;w.wallRunning=false;w.wall=null;w.vy=0;
+ w.flightBank=0;w.flying=!w.flying;w.slamming=false;w.wallRunning=false;w.wall=null;w.vy=0;
  if(w.flying){w.y+=w.grounded?1.5:0;w.grounded=false;}
  return w.flying;
 }
@@ -16,6 +16,7 @@ export function stepHero(w,input,dt,collider=empty,physics=PHYSICS){
  if(!w.flying)return stepWorld(w,{...input,phase:false,slow:false},dt,collider,ATLAS_PHYSICS);
  w.elapsed+=dt;w.worldTime+=dt;w.phasing=false;w.wallRunning=false;w.impact=Math.max(0,w.impact-dt*3);w.landingImpact=0;
  const right=Number(!!input.right)-Number(!!input.left),forward=Number(!!input.forward)-Number(!!input.backward),yaw=input.viewYaw||0;
+ w.flightBank=((w.flightBank||0)+(-right*.42-(w.flightBank||0))*(1-Math.exp(-dt*5)));
  const vertical=Number(!!input.ascend)-Number(!!input.descend),moving=!!(right||forward||vertical);
  w.boosting=!!input.boost&&moving&&w.energy>2&&!w.slamming;
  w.energy=Math.max(0,Math.min(100,w.energy+dt*(w.boosting?-24:14)));

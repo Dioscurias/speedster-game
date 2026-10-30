@@ -1,12 +1,29 @@
 import * as THREE from 'three';
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+export function flightPose(w){
+ if(w.hero!=='atlas'||!w.flying)return {pitch:0,bank:0,armSpread:0};
+ const horizontal=Math.hypot(w.vx||0,w.vz||0),travel=clamp(horizontal/55,0,1);
+ const climb=Math.atan2(w.vy||0,Math.max(1,horizontal));
+ return {pitch:travel*(-(w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
+}
 export function poseHero(animator,model,w){
- const atlas=w.hero==='atlas';model.scale.set(atlas?1.18:1,atlas?1.06:1,atlas?1.14:1);
- model.rotation.x=atlas&&w.flying?-Math.min(1.2,Math.hypot(w.vx,w.vz)/150):0;
+ const atlas=w.hero==='atlas',pose=flightPose(w);model.scale.set(atlas?1.05:1,atlas?1.03:1,atlas?1.04:1);
+ model.rotation.x=pose.pitch;model.rotation.z=pose.bank;
  if(atlas&&w.flying){
-  animator.bodyBend('Spine',w.boosting?-.8:-.18);
-  for(const side of ['Left','Right']){animator.bodyBend(side+'Arm',w.boosting?-2.4:-.45);animator.bodyBend(side+'ForeArm',-.25);animator.bodyBend(side+'UpLeg',.15);}
+  animator.bodyBend('Spine',-.06);
+  for(const side of ['Left','Right']){
+   const sign=side==='Left'?-1:1;
+   animator.bodyBend(side+'Arm',-.15);
+   animator.bodyBend(side+'Arm',sign*pose.armSpread,'z');
+   animator.bodyBend(side+'ForeArm',.38);
+   animator.bodyBend(side+'UpLeg',.02);
+   animator.bodyBend(side+'Leg',-.15);
+  }
  }
- if(atlas&&w.punchTime>0){const strike=Math.sin(Math.min(1,w.punchTime/.4)*Math.PI);animator.bodyBend('RightArm',-1.8*strike);animator.bodyBend('RightForeArm',-.5*strike);animator.bodyBend('Spine',.2*strike,'y');}
+ if(atlas&&w.punchTime>0){
+  const progress=1-Math.min(1,w.punchTime/.4),strike=progress<.3?-progress/.3*.45:Math.sin((progress-.3)/.7*Math.PI)*2.1;
+  animator.bodyBend('RightArm',-strike);animator.bodyBend('RightForeArm',-.35*Math.max(0,strike));animator.bodyBend('Spine',-.22*strike,'y');
+ }
 }
 
 export function inspectHero(model,camera){

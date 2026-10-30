@@ -55,7 +55,7 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
   view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt);
   const scale=apexBeat>0?.65:1;apexBeat=Math.max(0,apexBeat-dt);accumulator+=dt*scale;
   while(accumulator>=1/120&&world.status==='running'){
-   course.advance(1/120,world);const vy=world.vy;stepHero(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,boost:keys.shift,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,world.hero==='atlas'?map.flightCollider:course.collider,PARKOUR);impacts.observe(world,heroControls.emit);jumpQueued=false;simulationDelta+=1/120;accumulator-=1/120;
+   course.advance(1/120,world);const vy=world.vy;stepHero(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,boost:keys.shift,ascend:keys[' '],descend:keys.c,slam:keys.x,viewYaw:view.yaw,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,world.hero==='atlas'?map.flightCollider:course.collider,PARKOUR);heroControls.update();impacts.observe(world,heroControls.emit);jumpQueued=false;simulationDelta+=1/120;accumulator-=1/120;
    if($('apex').checked&&!$('reduced').checked&&vy>0&&world.vy<=0&&!world.grounded)apexBeat=.06;
    const result=course.update(world);if(result.respawned){world.hero=selectedHero();world.flying=false;world.slamming=false;abilities.cancelAim();wasAiming=false;animator.reset(world);fx.reset(world);impacts.wasGrounded=true;view.yaw=0;apexBeat=0;}
    if(result.complete){clearInput();overlay('You made it.',`${result.collected} / ${result.total} orbs · ${world.elapsed.toFixed(1)} seconds${result.collected===result.total?' · Perfect clear':''}`,'Play again');$('restart').hidden=true;}

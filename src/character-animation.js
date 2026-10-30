@@ -29,6 +29,7 @@ export class CharacterAnimation{
   if(world.status==='paused'||dt<=0)return this.state;
   this.restore();updateAnimation(this.state,world,input,dt);this.applyWeights();this.mixer.update(dt);this.capture();
   const s=this.state;
+  if(world.hero==='atlas'&&world.flying){s.tuck=0;s.reach=0;s.air=1;s.lean=0;s.bank=0;}
   // Hold a sampled neutral pose in flight so idle sway cannot fight the jump.
   for(const r of Object.values(this.bones))r.bone.quaternion.slerp(r.neutral,s.air);
   // Additive poses use the fresh clip pose every frame, never last frame's
