@@ -22,6 +22,7 @@ export function sanitizeSnapshot(input={}){
     grounded:Boolean(input.grounded),
     punchTime:input.hero==='atlas'?clamp(number(input.punchTime),0,.4):0,
     slamming:input.hero==='atlas'&&Boolean(input.slamming),
+    airBraking:input.hero==='atlas'&&Boolean(input.airBraking),
     flightBank:input.hero==='atlas'?clamp(number(input.flightBank),-.6,.6):0,
     phasing:input.hero!=='atlas'&&Boolean(input.phasing)
   };

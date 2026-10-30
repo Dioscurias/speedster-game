@@ -22,3 +22,7 @@ Reproduced and fixed:
 - Repeated zero-timestep pose application could layer offsets without a fresh animation sample. Apply Atlas poses only after a nonzero animation step.
 
 Validation: 131 unit tests; production build; existing both-map responsive browser regression; updated hero-powers browser check using actual pause-menu character selection, on-screen blast button, quick-tap slam, Blink and mesh visibility; Miniflare runtime WebSocket room tests. Local input/visual tests and worker tests are distinct from live multi-client verification.
+
+## Atlas handling pass
+
+Added B air brake (also available on the Atlas action bar), more responsive movement release, boost exhaustion latch until Shift is released, and a distinct committed slam pose. Slam suppresses lateral steering and clears horizontal momentum on landing. Atlas status reports flight/braking/slam/grounded or the exhausted-boost release instruction. Braking state is replicated for other players' flight poses. Regression tests exercise stopping boosted flight, safe slam landing and boost recovery.

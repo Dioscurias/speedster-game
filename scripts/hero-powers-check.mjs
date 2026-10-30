@@ -19,6 +19,7 @@ try{
  await p.keyboard.press('r');await p.keyboard.down(' ');await p.waitForTimeout(700);await p.keyboard.up(' ');await p.waitForTimeout(150);
  assert.equal((await read()).w.flying,true);assert.ok((await read()).w.y>4);await visible();
  await p.keyboard.down('Shift');await p.keyboard.down(' ');await p.waitForTimeout(800);await p.keyboard.up(' ');await p.keyboard.up('Shift');await p.waitForTimeout(150);await visible();
+ await p.keyboard.down(' ');await p.keyboard.down('Shift');await p.waitForTimeout(700);await p.keyboard.down('b');await p.waitForTimeout(500);assert.ok((await read()).w.speed<2);assert.equal((await read()).w.airBraking,true);await p.keyboard.up('b');await p.keyboard.up(' ');await p.keyboard.up('Shift');await p.waitForTimeout(150);await visible();
  if(map==='parkour'){
  await p.locator('[data-hero-key="f"]').click({delay:1300});await p.waitForTimeout(80);assert.equal(await p.locator('#ability-hud').isVisible(),true);assert.ok((await read()).abilities.blast.cooldown>0);await visible();
  }

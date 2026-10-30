@@ -2,9 +2,10 @@ import * as THREE from 'three';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function flightPose(w){
  if(w.hero!=='atlas'||!w.flying)return {pitch:0,bank:0,armSpread:0};
+ if(w.slamming)return {pitch:-2.7,bank:0,armSpread:.2};
  const horizontal=Math.hypot(w.vx||0,w.vz||0),travel=clamp(horizontal/55,0,1);
  const climb=Math.atan2(w.vy||0,Math.max(1,horizontal));
- return {pitch:travel*(-(w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
+ return {pitch:travel*(-(w.airBraking?.35:w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
 }
 export function poseHero(animator,model,w){
  if(w.hero!=='atlas')return;
