@@ -19,3 +19,35 @@ test('pose easing is consistent at 30 and 120 frames per second and freezes on p
  const run=fps=>{const a=rig(),m=new THREE.Group();for(let i=0;i<fps*2;i++)poseHero(a,m,{...hover,vz:-100,boosting:true},1/fps);return {a,m};};const slow=run(30),fast=run(120);assert.ok(slow.m.quaternion.angleTo(fast.m.quaternion)<.001);
  const before=slow.m.quaternion.clone();poseHero(slow.a,slow.m,{...hover,status:'paused'},1);assert.ok(before.equals(slow.m.quaternion));
 });
+
+test('steady cruise and boost keep the arms and legs moving',()=>{
+ for(const boosting of [false,true]){
+  const targets={};const a={bodyBend(){},aimLimb(name,child,direction){targets[name]=direction;}};
+  const m=new THREE.Group(),w={...hover,vz:boosting?-200:-72,boosting};
+  for(let i=0;i<120;i++)poseHero(a,m,w,1/60);
+  const before={...targets};
+  const bones=['LeftArm','RightForeArm','LeftLeg','RightUpLeg'];
+  const travel=new Map(bones.map(bone=>[bone,0]));
+  for(let i=0;i<60;i++){
+   poseHero(a,m,w,1/60);
+   for(const bone of bones){
+    const change=new THREE.Vector3(...targets[bone]).distanceTo(new THREE.Vector3(...before[bone]));
+    travel.set(bone,Math.max(travel.get(bone),change));
+   }
+  }
+  for(const [bone,change] of travel)assert.ok(change>.025,`${bone} moved only ${change}`);
+ }
+});
+
+test('opposite steering inputs extend opposite arms at the same speed',()=>{
+ const read=bank=>{
+  const targets={};const a={bodyBend(){},aimLimb(name,child,direction){targets[name]=direction;}};
+  const m=new THREE.Group();
+  for(let i=0;i<120;i++)poseHero(a,m,{...hover,vz:-72,flightBank:bank},1/60);
+  return targets;
+ };
+ const left=read(.32),right=read(-.32);
+ assert.ok(left.LeftArm[1]>right.LeftArm[1]+.08);
+ assert.ok(right.RightArm[1]>left.RightArm[1]+.08);
+ assert.ok(left.LeftLeg[2]>right.LeftLeg[2]+.05);
+});

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createWorld,createCollider} from '../src/game.js';
-import {stepHero,toggleFlight,findPunchTarget} from '../src/powerhouse.js';
+import {FLIGHT,stepHero,toggleFlight,findPunchTarget} from '../src/powerhouse.js';
 import {sanitizeSnapshot,crashDamage} from '../src/multiplayer-rules.js';
 import * as THREE from 'three';
 import {createCourse} from '../src/parkour-course.js';
@@ -11,14 +11,14 @@ const world=()=>({...createWorld(),status:'running',hero:'atlas'});
 const advance=(w,input,seconds,collider)=>{for(let t=0;t<seconds;t+=1/120)stepHero(w,input,1/120,collider);};
 test('Atlas hovers, climbs and boosts faster than normal flight',()=>{
  const w=world();toggleFlight(w);const start=w.y;advance(w,{},1);assert.ok(w.y>=start-.01);advance(w,{ascend:true},1);assert.ok(w.y>10);
- advance(w,{forward:true},2);const normal=w.speed;advance(w,{forward:true,boost:true},2);assert.ok(w.speed>normal*1.5);assert.ok(w.energy<100);
+ advance(w,{forward:true},2);const normal=w.speed;advance(w,{forward:true,boost:true},3);assert.ok(Math.abs(normal-FLIGHT.cruiseSpeed)<.1);assert.ok(Math.abs(w.speed-FLIGHT.boostSpeed)<.1);assert.ok(w.energy<100);
 });
 test('flight cannot tunnel through a wall even at boost speed',()=>{
- const wall={height:100,polygon:[[-20,-20],[20,-20],[20,-19],[-20,-19]]};const c=createCollider([wall]);const w=world();toggleFlight(w);w.y=10;w.vz=-220;
+ const wall={height:100,polygon:[[-20,-20],[20,-20],[20,-19],[-20,-19]]};const c=createCollider([wall]);const w=world();toggleFlight(w);w.y=10;w.vz=-FLIGHT.boostSpeed;
  advance(w,{forward:true,boost:true},.5,c);assert.ok(w.z>-19);assert.equal(c.blocked(w.x,w.z,w.y),false);
 });
 test('a dive lands on the roof it crosses and leaves a heavy impact',()=>{
- const c=createCollider([{height:15,polygon:[[-10,-10],[10,-10],[10,10],[-10,10]]}]);const w=world();toggleFlight(w);w.y=50;
+ const c=createCollider([{height:15,polygon:[[-10,-10],[10,-10],[10,10],[-10,10]]}]);const w=world();w.y=50;w.grounded=false;toggleFlight(w);
  for(let i=0;i<240&&!w.grounded;i++)stepHero(w,{slam:true},1/120,c);
  assert.equal(w.y,15);assert.equal(w.grounded,true);assert.equal(w.flying,false);assert.ok(w.landingImpact>.9);
 });
@@ -39,4 +39,10 @@ test('parkour flight respects monuments without inventing a floor across gaps',(
 });
 test('Atlas cannot inherit Speedster phase or slow time while grounded',()=>{
  const w=world();stepHero(w,{phase:true,slow:true},1/120);assert.equal(w.phasing,false);assert.equal(w.slowing,false);
+});
+
+test('room snapshots preserve full Atlas boost speed in both vertical directions',()=>{
+ for(const vy of [-FLIGHT.boostSpeed,FLIGHT.boostSpeed]){
+  assert.equal(sanitizeSnapshot({hero:'atlas',flying:true,vy}).vy,vy);
+ }
 });

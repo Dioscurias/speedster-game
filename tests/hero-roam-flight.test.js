@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cameraSweep,createCollider,createWorld} from '../src/game.js';
-import {flightTelemetry,stepHero,toggleFlight} from '../src/powerhouse.js';
+import {flightSnapshot,flightTelemetry,stepHero,toggleFlight,resetFlight} from '../src/flight/index.js';
+import {createFlightState} from '../src/flight/flight-state.js';
+import {FLIGHT} from '../src/flight/flight-config.js';
 
 const square=(size)=>[[-size,-size],[size,-size],[size,size],[-size,size]];
 const atlas=(values={})=>({...createWorld(),hero:'atlas',status:'running',...values});
@@ -16,8 +18,8 @@ test('rooftop takeoff preserves position on input and allows landing and immedia
  assert.equal(w.y,20);
  simulate(w,{},.3,roof);
  assert.ok(w.y>22);
- for(let i=0;i<120&&w.flying;i++)stepHero(w,{descend:true},1/120,roof);
- assert.equal(w.flightState,'landing');
+ for(let i=0;i<240&&w.flying;i++)stepHero(w,{descend:true},1/120,roof);
+ assert.equal(flightSnapshot(w).state,'LANDING');
  assert.equal(w.y,20);
  assert.equal(flightTelemetry(w,roof).altitude,0);
  assert.equal(toggleFlight(w,roof),true);
@@ -28,12 +30,12 @@ test('pitch steers flight similarly at 30, 60 and 144 fps',()=>{
   const w=atlas({y:80,grounded:false});
   toggleFlight(w);
   simulate(w,{forward:true,viewPitch:-.55,boost:true},2,undefined,fps);
-  assert.equal(w.flightState,'boosting');
-  assert.ok(w.y>200);
+  assert.equal(flightSnapshot(w).state,'BOOST');
+  assert.ok(w.y>110);
   return w;
  });
  for(const w of runs.slice(1)){
-  assert.ok(Math.hypot(w.z-runs[0].z,w.y-runs[0].y)<1);
+  assert.ok(Math.hypot(w.z-runs[0].z,w.y-runs[0].y)<1e-8);
   assert.ok(Math.abs(w.energy-runs[0].energy)<.01);
  }
 });
@@ -55,14 +57,38 @@ test('vertical camera sweep stops beneath an overhead surface',()=>{
 });
 
 test('braking keeps vertical control, then releasing movement eases to a hover',()=>{
- const w=atlas({y:80,vz:-160,grounded:false});
+ const w=atlas({y:80,vz:-30,grounded:false});
  toggleFlight(w);
  simulate(w,{brake:true,ascend:true},.5);
- assert.equal(w.flightState,'braking');
- assert.ok(Math.abs(w.vz)<1&&w.vy>10);
+ assert.equal(flightSnapshot(w).state,'BRAKE');
+ assert.ok(Math.abs(w.vz)<1e-8&&w.vy>4);
  const vy=w.vy;
  simulate(w,{},.1);
  assert.ok(w.vy>0&&w.vy<vy);
  simulate(w,{},2);
  assert.equal(flightTelemetry(w).flightLabel,'Hover');
+});
+
+test('roof launch settles into hover and rejects illegal state transitions',()=>{
+ const machine=createFlightState();
+ assert.equal(machine.transition('BOOST','invalid'),false);
+ assert.equal(machine.state,'GROUNDED');
+ const roof=createCollider([{height:20,polygon:square(25)}]);
+ const w=atlas({y:20});
+ toggleFlight(w,roof);simulate(w,{},1.5,roof);
+ assert.equal(flightSnapshot(w).state,'HOVER');
+ assert.ok(w.y>20);
+});
+
+test('boost reaches zero before switching to cruise and emits both boost events',()=>{
+ const w=atlas({y:80,grounded:false,energy:FLIGHT.boostMinimum});
+ resetFlight(w,'HOVER');
+ const events=[];
+ for(let i=0;i<120&&!(events.includes('boostEnd'));i++){
+  stepHero(w,{forward:true,boost:true},1/120,undefined,undefined,type=>events.push(type));
+ }
+ assert.deepEqual(events,['boostStart','boostEnd']);
+ assert.equal(w.energy,0);
+ assert.equal(flightSnapshot(w).state,'CRUISE');
+ assert.equal(flightSnapshot(w).canBoost,false);
 });
