@@ -91,4 +91,3 @@ export function poseHero(animator,model,w,dt=1/60,heading=w.heading||0){
   animator.bodyBend('RightArm',-strike);animator.bodyBend('RightForeArm',-.35*Math.max(0,strike));animator.bodyBend('Spine',-.22*strike,'y');
  }
 }
-
