@@ -89,7 +89,7 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
    }
    for(const [label,{node}] of tools)node.hidden=!visible.has(label);
    abilities.inert=state.status!=='running';
-   const hint=state.hero!=='atlas'?'':state.boostExhausted?'Release Shift to reset boost':state.flying?'Space climb · C descend · R exit flight':state.grounded?'R take off':'R engage flight';
+   const hint=state.hero!=='atlas'?'':(state.boostExhausted||state.flight?.reason?.startsWith('Shift needs energy'))?'Release Shift to reset boost':state.flying?'Space climb · C descend · R exit flight':state.grounded?'R take off':'R engage flight';
    if(hint!==lastHint){lastHint=hint;hintUntil=time+4200;set(nodes.hint,hint);}
    nodes.hint.style.opacity=hint&&time<hintUntil?'1':'0';
    const message=feed.read(time).at(-1);

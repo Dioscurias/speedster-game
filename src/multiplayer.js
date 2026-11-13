@@ -68,7 +68,7 @@ export class Multiplayer{
     const root=new THREE.Group(),model=clone(this.template);root.add(model);model.traverse(object=>{if(object.isMesh)object.material=object.material.clone();});recolorSpeedsterSuit(model,speedsterColorForIndex(colorIndex));
     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=64;const texture=new THREE.CanvasTexture(canvas),label=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));label.scale.set(3.3,.82,1);label.position.y=2.5;root.add(label);
     const animation=this.clips.length?new CharacterAnimation(model,this.clips,createWorld()):null;
-    return {root,model,label,canvas,texture,colorIndex,animation,position:new THREE.Vector3(),state:null,labelState:'',phase:hash(id)%10};
+    return {root,model,label,canvas,texture,colorIndex,animation,flightRotation:new THREE.Quaternion(),targetFlight:new THREE.Quaternion(),position:new THREE.Vector3(),state:null,labelState:'',phase:hash(id)%10};
   }
 
   update(dt){
@@ -79,7 +79,12 @@ export class Multiplayer{
       const target=new THREE.Vector3(player.x+player.vx*age,player.y+(player.flying?player.vy*age:0),player.z+player.vz*age);avatar.position.lerp(target,1-Math.exp(-dt*16));
       avatar.root.position.set(avatar.position.x-world.x,avatar.position.y,avatar.position.z-world.z);
       const turn=Math.atan2(Math.sin(-player.heading-avatar.root.rotation.y),Math.cos(-player.heading-avatar.root.rotation.y));avatar.root.rotation.y+=turn*(1-Math.exp(-dt*16));const speed=Math.hypot(player.vx,player.vz,player.flying?player.vy:0);
-      if(avatar.animation){const state={...createWorld(),...player,status:'running',speed,worldTime:performance.now()/1000};avatar.animation.update(state,{forward:speed>.5,viewYaw:player.heading},dt);poseHero(avatar.animation,avatar.model,{...state,heading:0},dt);}
+      if(avatar.animation){const state={...createWorld(),...player,status:'running',speed,worldTime:performance.now()/1000};avatar.animation.update(state,{forward:speed>.5,viewYaw:player.heading},dt);poseHero(avatar.animation,avatar.model,{...state,heading:0},dt);
+       if(player.flightOrientation){
+        avatar.root.quaternion.copy(avatar.flightRotation.slerp(avatar.targetFlight.fromArray(player.flightOrientation),1-Math.exp(-dt*16)));
+        // The transmitted root already includes flight tilt. Keep the procedural limb pose.
+        avatar.model.quaternion.identity();
+       }else avatar.flightRotation.copy(avatar.root.quaternion);}
       avatar.model.visible=player.health>0;avatar.label.visible=player.health>0;avatar.model.traverse(object=>{if(object.isMesh){object.material.transparent=player.phasing;object.material.opacity=player.phasing?.48:1;}});
       const name=sanitizePlayerName(player.name),labelState=JSON.stringify([name,player.health]);
       if(labelState!==avatar.labelState){

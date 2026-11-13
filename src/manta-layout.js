@@ -88,7 +88,7 @@ export function mountGameLayout(parkour,autoplay){
   if(autoplay&&(parkour||savedName)&&!autoStarted&&!startButton.disabled){autoStarted=true;startButton.click();}
   if(raw){
    heroPicker.update(raw);const network=parkour?window.__parkour?.getNetwork():window.__velocity?.getNetwork();
-   hud.update({...raw,speedLimit:raw.speedLimit??(parkour?36:936),speed:raw.speed*3.6,health:parkour?network?.health??100:raw.health,street:parkour?$('zone')?.textContent:raw.street,players:network?.online||1,connection:network?.status||'Connecting',abilities:parkour?window.__parkour?.getAbilities():undefined},time);
+   hud.update({...raw,speedLimit:raw.speedLimit??(parkour?36:936),speed:(raw.flight?.speed??raw.speed)*3.6,energy:raw.flight?.energy??raw.energy,health:parkour?network?.health??100:raw.health,street:parkour?$('zone')?.textContent:raw.street,players:network?.online||1,connection:network?.status||'Connecting',abilities:parkour?window.__parkour?.getAbilities():undefined},time);
    if(status!==previousStatus){if(status==='paused'){if(pauseTitle)pauseTitle.textContent='Paused';document.activeElement?.blur();resumeButton.focus({preventScroll:true});}if(status==='running')shell.focus({preventScroll:true});previousStatus=status;}
   }
   if(!cancelled)animation=requestAnimationFrame(frame);

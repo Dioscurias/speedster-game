@@ -1,3 +1,6 @@
+import {TRANSITIONS} from './flight/flight-state.js';
+import {FLIGHT} from './flight/flight-config.js';
+
 export const MAX_HEALTH=100;
 export const RESPAWN_MS=3000;
 export const HIT_COOLDOWN_MS=850;
@@ -8,16 +11,21 @@ const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
 export function sanitizeSnapshot(input={}){
   if(!input||typeof input!=='object')input={};
+  const orientation=Array.isArray(input.flightOrientation)&&input.flightOrientation.length===4&&input.flightOrientation.every(Number.isFinite)?input.flightOrientation:null;
+  const norm=orientation?Math.hypot(...orientation):0;
+  const atlasFlight=input.hero==='atlas'&&Boolean(input.flying);
   return {
     x:clamp(number(input.x),-5000,5000),
     z:clamp(number(input.z),-5000,5000),
     y:clamp(number(input.y),-100,600),
-    vy:clamp(number(input.vy),-150,250),
+    vy:clamp(number(input.vy),atlasFlight?-FLIGHT.boostSpeed:-150,atlasFlight?FLIGHT.boostSpeed:250),
     vx:clamp(number(input.vx),-300,300),
     vz:clamp(number(input.vz),-300,300),
     heading:number(input.heading)%(Math.PI*2),
     hero:input.hero==='atlas'?'atlas':'speedster',
-    flying:input.hero==='atlas'&&Boolean(input.flying),
+    flying:atlasFlight,
+    ...(input.hero==='atlas'&&Object.hasOwn(TRANSITIONS,input.flightState)?{flightState:input.flightState}:{}),
+    ...(atlasFlight&&norm>.5&&norm<2?{flightOrientation:orientation.map(value=>value/norm)}:{}),
     boosting:Boolean(input.boosting),
     grounded:Boolean(input.grounded),
     punchTime:input.hero==='atlas'?clamp(number(input.punchTime),0,.4):0,

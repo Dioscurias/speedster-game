@@ -29,7 +29,7 @@ export function abilityReadouts(state,parkour,all=false){
     break;
    case 'Boost':
     if(state.boosting)status='active';
-    else if(energyLow||state.boostExhausted){status='cooling';ready=state.boostExhausted?0:(state.energy??0)/BOOST_MIN_ENERGY;}
+    else if(state.flying&&state.flight?!state.flight.canBoost:energyLow||state.boostExhausted){status='cooling';ready=0;}
     break;
    case 'Air brake':
     if(state.airBraking)status='active';
