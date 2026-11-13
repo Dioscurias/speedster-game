@@ -14,7 +14,7 @@ test('Atlas hovers, climbs and boosts faster than normal flight',()=>{
  advance(w,{forward:true},2);const normal=w.speed;advance(w,{forward:true,boost:true},3);assert.ok(Math.abs(normal-FLIGHT.cruiseSpeed)<.1);assert.ok(Math.abs(w.speed-FLIGHT.boostSpeed)<.1);assert.ok(w.energy<100);
 });
 test('flight cannot tunnel through a wall even at boost speed',()=>{
- const wall={height:100,polygon:[[-20,-20],[20,-20],[20,-19],[-20,-19]]};const c=createCollider([wall]);const w=world();toggleFlight(w);w.y=10;w.vz=-FLIGHT.boostSpeed;
+ const wall={height:100,polygon:[[-20,-20],[20,-20],[20,-19],[-20,-19]]};const c=createCollider([wall]);const w=world();w.y=10;w.grounded=false;toggleFlight(w);w.vz=-FLIGHT.boostSpeed;
  advance(w,{forward:true,boost:true},.5,c);assert.ok(w.z>-19);assert.equal(c.blocked(w.x,w.z,w.y),false);
 });
 test('a dive lands on the roof it crosses and leaves a heavy impact',()=>{
@@ -43,6 +43,6 @@ test('Atlas cannot inherit Speedster phase or slow time while grounded',()=>{
 
 test('room snapshots preserve full Atlas boost speed in both vertical directions',()=>{
  for(const vy of [-FLIGHT.boostSpeed,FLIGHT.boostSpeed]){
-  assert.equal(sanitizeSnapshot({hero:'atlas',flying:true,vy}).vy,vy);
+  for(const axis of ['vx','vy','vz'])assert.equal(sanitizeSnapshot({hero:'atlas',flying:true,[axis]:vy})[axis],vy);
  }
 });

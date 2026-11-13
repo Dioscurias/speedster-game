@@ -24,11 +24,10 @@ function turnToward(from,to,limit){
  }
  return unit(tangent).map((v,i)=>from[i]*Math.cos(limit)+v*Math.sin(limit));
 }
-function softLimit(position,target,min,max,band,inset){
- const upper=max-position,lower=position-min;
- if(upper<band)return Math.min(target,C.boostSpeed*(upper-inset)/band);
- if(lower<band)return Math.max(target,C.boostSpeed*(inset-lower)/band);
- return target;
+function softLimit(distance,band){
+ const remaining=distance-C.edgeInset;
+ if(remaining<0)return Math.max(-C.verticalSpeed,remaining*C.verticalSpeed/C.edgeInset);
+ return Math.min(C.boostSpeed,Math.sqrt(2*C.limitAcceleration*remaining),C.boostSpeed*remaining/band);
 }
 export function integrate(w,control,motion,c,dt){
  const {state,boostRamp,glideSpeed,slam}=motion,{direction,lift,planar}=control;
@@ -39,37 +38,42 @@ export function integrate(w,control,motion,c,dt){
  if(state==='BRAKE')desired=[0,lift*C.verticalSpeed,0];
  if(slam)desired=[0,-C.slamSpeed,0];
  if(state==='TAKEOFF')desired=[0,C.launchSpeed,0];
- if(c.bounds){
-  desired[0]=softLimit(w.x,desired[0],c.bounds.minX,c.bounds.maxX,C.edgeBand,C.edgeInset);
-  desired[2]=softLimit(w.z,desired[2],c.bounds.minZ,c.bounds.maxZ,C.edgeBand,C.edgeInset);
- }
- const ground=c.terrain?.(w.x,w.z)?.height??0;
- desired[1]=softLimit(w.y,desired[1],-Infinity,ground+C.ceiling,C.ceilingBand,C.edgeInset);
  if(state==='WALL_CONTACT')desired=before.map(value=>value*(1-C.wallDrag*dt));
+ const ground=c.terrain?.(w.x,w.z)?.height??0;
+ const bounds=c.bounds;
+ const limits=[
+  bounds?[-softLimit(w.x-bounds.minX,C.edgeBand),softLimit(bounds.maxX-w.x,C.edgeBand)]:null,
+  [-Infinity,softLimit(ground+C.ceiling-w.y,C.ceilingBand)],
+  bounds?[-softLimit(w.z-bounds.minZ,C.edgeBand),softLimit(bounds.maxZ-w.z,C.edgeBand)]:null,
+ ];
+ for(const [index,limit] of limits.entries()){
+  if(limit)desired[index]=clamp(desired[index],...limit);
+ }
  const target=length(desired);
- // Limits have their own braking authority so a boosted hero can turn inside the buffer.
- const boundary=c.bounds&&(w.x<c.bounds.minX+C.edgeBand||w.x>c.bounds.maxX-C.edgeBand||
-  w.z<c.bounds.minZ+C.edgeBand||w.z>c.bounds.maxZ-C.edgeBand);
- const ceiling=w.y>ground+C.ceiling-C.ceilingBand;
- if(boundary||ceiling){
-  const limit=(v,target)=>v+clamp(target-v,-C.limitAcceleration*dt,C.limitAcceleration*dt);
-  if(boundary){w.vx=limit(w.vx,desired[0]);w.vz=limit(w.vz,desired[2]);}
-  if(ceiling)w.vy=limit(w.vy,desired[1]);
-  before[0]=w.vx;before[1]=w.vy;before[2]=w.vz;
+ function applyVelocity(velocity){
+  for(const [index,limit] of limits.entries()){
+   if(!limit)continue;
+   const safe=clamp(velocity[index],...limit);
+   if(safe!==velocity[index])velocity[index]=before[index]+clamp(safe-before[index],-C.limitAcceleration*dt,C.limitAcceleration*dt);
+  }
+  [w.vx,w.vy,w.vz]=velocity;
  }
  const currentSpeed=length(before);
  if(state==='BRAKE'||slam){
   const delta=desired.map((v,i)=>v-before[i]),n=length(delta);
   const factor=n?Math.min(1,(slam?C.slamAcceleration:C.brakeDeceleration)*dt/n):0;
-  [w.vx,w.vy,w.vz]=before.map((v,i)=>v+delta[i]*factor);
+  applyVelocity(before.map((v,i)=>v+delta[i]*factor));
   return;
  }
- const rate=target>currentSpeed?C.acceleration:state==='GLIDE'?Math.max(C.deceleration,glideSpeed/C.glideTime):C.deceleration;
+ const coasting=state!=='BOOST'&&currentSpeed>C.cruiseSpeed;
+ const rate=target>currentSpeed?(state==='BOOST'?C.boostAcceleration:C.acceleration):
+  coasting?C.boostCoastDeceleration:state==='GLIDE'?Math.max(C.deceleration,Math.min(glideSpeed,C.cruiseSpeed)/C.glideTime):C.deceleration;
  const verticalReverse=!planar&&Math.hypot(before[0],before[2])<C.hoverSpeed&&before[1]*desired[1]<0;
  const nextSpeed=verticalReverse?Math.max(0,currentSpeed-C.deceleration*dt):currentSpeed+clamp(target-currentSpeed,-rate*dt,rate*dt);
- const turn=C.cruiseTurn+(C.boostTurn-C.cruiseTurn)*boostRamp;
+ const momentum=clamp((currentSpeed-C.cruiseSpeed)/(C.boostSpeed-C.cruiseSpeed),0,1);
+ const turn=C.cruiseTurn+(C.boostTurn-C.cruiseTurn)*Math.max(boostRamp,momentum);
  const heading=verticalReverse?unit(before):currentSpeed&&target?turnToward(unit(before,currentSpeed),unit(desired,target),turn*dt):unit(target?desired:before);
- [w.vx,w.vy,w.vz]=heading.map(value=>value*nextSpeed);
+ applyVelocity(heading.map(value=>value*nextSpeed));
 }
 
 // Sweep the upright collision volume in increments smaller than its radius.

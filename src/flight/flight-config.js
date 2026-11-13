@@ -1,16 +1,16 @@
 // Distances are metres, speeds m/s, rates per second, angles radians.
 export const FLIGHT = Object.freeze({
  // Integration and input.
- hz:120, maxDelta:.1, cruiseSpeed:150/3.6, boostSpeed:450/3.6,
+ hz:120, maxDelta:.1, cruiseSpeed:400/3.6, boostSpeed:1350/3.6,
  verticalSpeed:25/3.6, boostRise:.6, boostFall:.8,
- acceleration:35, deceleration:20, brakeDeceleration:70,
+ acceleration:75, boostAcceleration:250, deceleration:35, boostCoastDeceleration:85, brakeDeceleration:190,
  cruiseTurn:140*Math.PI/180, boostTurn:60*Math.PI/180,
  // Transition timing and vertical launch.
  glideTime:1, hoverSpeed:.4, launchSpeed:12, crouchTime:.075,
  launchTime:.28, landingDuration:.2, wallDuration:.2, wallDrag:1.5,
  // Boost resource and map limits.
  boostMinimum:15, boostDrain:24, energyRecovery:14, energyMax:100,
- ceiling:600, ceilingBand:65, edgeBand:70, edgeInset:3, limitAcceleration:160,
+ ceiling:600, ceilingBand:65, edgeBand:70, edgeInset:3, limitAcceleration:300,
  // Swept body, surface impact and dive.
  sweepDistance:.16, skin:.002, bodyHeight:1.86, clearance:2.52,
  impactThreshold:18, impactEnergy:6, impactFade:4, impactFull:70,
