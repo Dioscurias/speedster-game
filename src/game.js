@@ -1,4 +1,5 @@
 export const PHYSICS=Object.freeze({acceleration:42,boostAcceleration:95,braking:105,reverseBraking:260,turnRate:12,airAcceleration:7,airTurnRate:1.8,jumpSpeed:6.8,jumpCutSpeed:3.8,fallGravity:1.45,stepHeight:.24,coyoteTime:.09,jumpBuffer:.12});
+export const BOOST_MIN_ENERGY=2;
 export const RUN_SPEED=90,BOOST_SPEED=260,GRAVITY=9.81,PLAYER_RADIUS=.38;
 export function createWorld(spawn={x:0,z:0}){return {status:'ready',x:spawn.x,z:spawn.z,y:0,vx:0,vz:0,vy:0,grounded:true,heading:0,distance:0,speed:0,topSpeed:0,elapsed:0,worldTime:0,energy:100,collected:0,hits:0,cooldown:0,boosting:false,slowing:false,impact:0,phasing:false,phaseSafe:null,wallRunning:false,wall:null,wallCooldown:0,coyote:0,jumpBuffer:0,landingImpact:0,surface:'asphalt',grip:1,jumpCut:false};}
 export function insidePolygon(x,z,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])inside=!inside;}return inside;}
@@ -19,7 +20,7 @@ export function stepWorld(s,input,dt,collider=empty,physics=PHYSICS){
  if(s.status!=='running'||dt<=0)return;
  s.elapsed+=dt;s.cooldown=Math.max(0,s.cooldown-dt);s.impact=Math.max(0,s.impact-dt*2);
  const right=Number(!!input.right)-Number(!!input.left),forward=Number(!!input.forward)-Number(!!input.backward),moving=!!(right||forward),yaw=input.viewYaw||0;
- s.boosting=moving&&!!input.boost&&s.energy>2&&!input.slow;s.slowing=!!input.slow&&s.energy>2;
+ s.boosting=moving&&!!input.boost&&s.energy>BOOST_MIN_ENERGY&&!input.slow;s.slowing=!!input.slow&&s.energy>2;
  s.energy=Math.max(0,Math.min(100,s.energy+dt*(s.boosting?-18:s.slowing?-12:16)));
  const timeScale=s.slowing?.35:1,total=dt*timeScale;s.worldTime+=total;
  s.wallCooldown=Math.max(0,s.wallCooldown-total);s.landingImpact=Math.max(0,s.landingImpact-total*3);

@@ -1,0 +1,14 @@
+.flight-wind{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0}
+.flight-wind i{
+ position:absolute;top:var(--height);width:clamp(28px,7vw,104px);height:1px;
+ background:linear-gradient(to right,transparent,#ffffffb0 75%,#fff);
+ transform-origin:100% 50%;animation:flight-wind var(--wind-time,1s) linear var(--delay) infinite;
+}
+.flight-wind i:nth-child(-n+7){left:var(--edge);scale:-1 1}
+.flight-wind i:nth-child(n+8){right:var(--edge)}
+@keyframes flight-wind{
+ from{transform:translateX(-45%) rotate(var(--angle)) scaleX(.25);opacity:0}
+ 22%{opacity:.78}
+ to{transform:translateX(155%) rotate(var(--angle)) scaleX(var(--wind-size));opacity:0}
+}
+@media(prefers-reduced-motion:reduce){.flight-wind{display:none}}

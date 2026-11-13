@@ -1,3 +1,5 @@
+import {BOOST_MIN_ENERGY} from '../game.js';
+
 const number=(value,fallback=0)=>Number.isFinite(value)?value:fallback;
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 export function hudView(state={},maxSpeed=936){
@@ -18,10 +20,47 @@ export function abilityReadouts(state,parkour,all=false){
  const keys=all?[...atlasKeys,...speedsterKeys.filter(([,label])=>label!=='Boost'),...(parkour?parkourKeys:[])]:state.hero==='atlas'?[...atlasKeys,...(parkour?parkourKeys:[])]:speedsterKeys.slice(0,parkour?2:4);
  return keys.map(([display,label])=>{
   const blast=state.abilities?.blast,blink=state.abilities?.teleports;
-  const ready=label==='Blink'&&blink&&!blink.available?Math.max(0,...blink.pips)
-   :label==='Hand blast'&&blast?(blast.aiming?blast.charge:1-blast.cooldown/state.blastCooldown)
-   :label==='Wall punch'?1-(state.punchTime||0)/.4
-   :label==='Boost'?(state.energy??100)/100:1;
-  return {display,label,ready:clamp(number(ready,1),0,1)};
+  const energyLow=(state.energy??100)<=BOOST_MIN_ENERGY;
+  const airborne=state.grounded===false;
+  let status='ready',ready=1;
+  switch(label){
+   case 'Flight':
+    if(state.flying)status='active';
+    break;
+   case 'Boost':
+    if(state.boosting)status='active';
+    else if(energyLow||state.boostExhausted){status='cooling';ready=state.boostExhausted?0:(state.energy??0)/BOOST_MIN_ENERGY;}
+    break;
+   case 'Air brake':
+    if(state.airBraking)status='active';
+    else if(!state.flying||state.slamming)status='unavailable';
+    break;
+   case 'Jump':
+   case 'Super jump':
+    if(state.flying||airborne&&!(state.coyote>0)&&!state.wallRunning)status='unavailable';
+    break;
+   case 'Ground slam':
+    if(state.slamming)status='active';
+    else if(!airborne)status='unavailable';
+    break;
+   case 'Wall punch':
+    if(state.punchTime>0){status=state.punchPending?'active':'cooling';ready=1-state.punchTime/.4;}
+    break;
+   case 'Phase':
+    if(state.phasing)status='active';
+    break;
+   case 'Slow time':
+    if(state.slowing)status='active';
+    else if(energyLow){status='cooling';ready=(state.energy??0)/BOOST_MIN_ENERGY;}
+    break;
+   case 'Blink':
+    if(blink&&!blink.available){status='cooling';ready=Math.max(0,...blink.pips);}
+    break;
+   case 'Hand blast':
+    if(blast?.aiming){status='active';ready=blast.charge;}
+    else if(blast?.cooldown){status='cooling';ready=1-blast.cooldown/state.blastCooldown;}
+    break;
+  }
+  return {display,label,status,ready:status==='unavailable'?0:clamp(number(ready,1),0,1)};
  });
 }

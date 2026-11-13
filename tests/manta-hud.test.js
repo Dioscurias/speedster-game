@@ -28,3 +28,19 @@ test('key labels reflect city and parkour controls rather than inventing abiliti
  assert.equal(parkour.find(k=>k.key==='e').label,'Blink');assert.equal(parkour.find(k=>k.key==='f').label,'Hand blast');
  assert.equal(parkour.some(k=>k.key==='q'||k.key==='shift'),false);
 });
+
+test('Atlas ability brightness reflects availability instead of the amount of energy spent',async()=>{
+ const {abilityReadouts}=await import('../src/hud/hud-model.js');
+ const get=(label,state)=>abilityReadouts({hero:'atlas',flying:true,grounded:false,energy:82,blastCooldown:2.5,...state},true).find(key=>key.label===label);
+ assert.equal(get('Boost').status,'ready');
+ assert.equal(get('Boost',{energy:2}).status,'cooling');
+ assert.equal(get('Boost',{boostExhausted:true}).status,'cooling');
+ assert.equal(get('Boost',{boosting:true}).status,'active');
+ assert.equal(get('Air brake',{airBraking:true}).status,'active');
+ assert.equal(get('Air brake',{flying:false,grounded:true}).status,'unavailable');
+ assert.equal(get('Ground slam',{slamming:true}).status,'active');
+ assert.equal(get('Blink',{abilities:{teleports:{available:1,pips:[1,.2,.4]}}}).status,'ready');
+ assert.equal(get('Blink',{abilities:{teleports:{available:0,pips:[.3,.2,.4]}}}).ready,.4);
+ assert.equal(get('Hand blast',{abilities:{blast:{aiming:true,charge:.4}}}).status,'active');
+ assert.equal(get('Hand blast',{abilities:{blast:{cooldown:1.25}}}).ready,.5);
+});

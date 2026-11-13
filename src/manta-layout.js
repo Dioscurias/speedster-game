@@ -9,6 +9,8 @@ import {mountHeroPicker} from './hero-picker.js';
 import {mountCourseOverview} from './course-overview.js';
 import {speedsterColorForIndex} from './superhero.js';
 
+const productionCredit='<p class="manta-credit">manta.bet by Nikoloz Sharvashidze Productions</p>';
+
 export function mountGameLayout(parkour,autoplay){
  const hostOrigin=window.parent===window?location.origin:trustedHostOrigin(document.referrer,location.origin);
  document.body.classList.add('fps-game','manta-game');document.title='Hero Roam | '+(parkour?'The Last Household':'Austin');
@@ -44,7 +46,7 @@ export function mountGameLayout(parkour,autoplay){
  guide.className='mr-dialog';guide.setAttribute('aria-label','Guide');guide.setAttribute('data-lenis-prevent','');
  guide.addEventListener('close',()=>{guide.classList.remove('player-name-dialog');guide.setAttribute('aria-label','Guide');});
  if(!guide.querySelector('[data-close-dialog]')){const close=guide.querySelector('.close-dialog');close.className='mr-icon-btn mr-dialog-close';close.innerHTML=icon('close');}
- function showGuide(){pause();guide.setAttribute('aria-label','Guide');guide.classList.remove('player-name-dialog');$('dialog-content').innerHTML=controls(parkour);if(!guide.open)guide.showModal();}
+ function showGuide(){pause();guide.setAttribute('aria-label','Guide');guide.classList.remove('player-name-dialog');$('dialog-content').innerHTML=controls(parkour)+productionCredit;if(!guide.open)guide.showModal();}
  function showCourseMap(){guide.setAttribute('aria-label','Live course map');$('dialog-content').innerHTML='<h2>The Last Household · Live map</h2><p>Gold: you · colored dots: other players · blue: checkpoints</p><canvas id="course-overview" aria-label="Live parkour course map"></canvas>';if(!guide.open)guide.showModal();const dispose=mountCourseOverview($('course-overview'));guide.addEventListener('close',dispose,{once:true});}
  if(parkour)window.addEventListener('keydown',event=>{if(event.key.toLowerCase()==='m'&&!event.repeat&&!guide.open){pause();showCourseMap();}});
  $('hud-guide').onclick=showGuide;
@@ -67,6 +69,7 @@ export function mountGameLayout(parkour,autoplay){
   };
   const credits=$('credits');credits.className='mr-menu-text';menuCard.append(credits);
  }
+ menuCard.insertAdjacentHTML('beforeend',productionCredit);
  const loader=document.createElement('div');loader.className='manta-loading';loader.setAttribute('role','status');loader.innerHTML=`<div class="loading-symbol"><svg class="loading-ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" pathLength="100"/></svg></div><span class="loading-wordmark">HERO ROAM</span><p data-loading-label>Loading ${parkour?'The Last Household':'Austin'}…</p>${button('Play',{id:'manta-start'})}`;shell.append(loader);
  const savedName=readPlayerName();
  {

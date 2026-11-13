@@ -14,6 +14,8 @@ import {mountMapOverview} from './map-overview.js';
 import {styleSuperhero,speedsterColorForIndex} from './superhero.js';
 import {Multiplayer} from './multiplayer.js';
 import {stepHero,flightTelemetry} from './powerhouse.js';
+import {createFlightView,createAustinSky} from './flight-view.js';
+import './flight-view.css';
 import {poseHero,inspectHero,followHeroCamera} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
 import {selectedHero,wireHeroControls} from './hero-controls.js';
@@ -31,6 +33,7 @@ const camera=new THREE.PerspectiveCamera(58,1,.08,1800);camera.position.set(3,3,
 scene.add(new THREE.HemisphereLight('#dcecff','#665e53',1.65));
 const sun=new THREE.DirectionalLight('#ffe3b5',3.1);sun.position.set(-45,70,40);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:260});sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun,sun.target);
 const loader=new GLTFLoader(),draco=new DRACOLoader();draco.setDecoderPath('/assets/draco/');loader.setDRACOLoader(draco);
+const flightView=createFlightView($('scene')),updateSky=createAustinSky(scene,camera,sun);
 function fitted(model,height){const wrapper=new THREE.Group();wrapper.add(model);const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());model.scale.multiplyScalar(height/size.y);const b=new THREE.Box3().setFromObject(model),c=b.getCenter(new THREE.Vector3());model.position.x-=c.x;model.position.z-=c.z;model.position.y-=b.min.y;return wrapper;}
 async function init(){try{
  $('start-label').textContent='Loading Austin…';const response=await fetch('/assets/austin/map.json');if(!response.ok)throw Error('Austin map is unavailable');map=prepareMap(await response.json());
@@ -45,7 +48,7 @@ async function init(){try{
  multiplayer.applySelf({colorIndex:0,hero:world.hero});
  loaded=true;city.update(world);$('start').disabled=false;$('start-label').textContent='Play';
  window.__velocity={getState:()=>({...world,...flightTelemetry(world,map.collider),health:lastHealth,street,viewYaw:view.yaw,viewPitch:view.pitch}),getPeers:()=>[...multiplayer.avatars.values()].map(a=>a.state),getNetwork:()=>({status:multiplayer.status,online:multiplayer.online,id:multiplayer.id}),getAnimation:()=>animator.snapshot(),getEffects:()=>({craters:impacts.scars.length,particles:impacts.particles.length,vibration:phaseVibration(world.worldTime,world.phasing),lightning:lightning.snapshot()}),assetsLoaded:true,mapName:map.name,model:'Quaternius Superhero',mapStats:{roads:map.roads.length,buildings:map.buildings.length,features:map.mappedFeatureCount,generatedFeatures:map.features.length-map.mappedFeatureCount,...city.detailStats},cameraInsideBuilding:()=>map.collider.cameraBlocked(world.x+camera.position.x,world.z+camera.position.z,camera.position.y)};
- if(import.meta.env.DEV)window.__velocity.debug={visuals:()=>inspectHero(runner,camera),place:state=>{Object.assign(world,state);if(Object.hasOwn(state,'flying')&&!Object.hasOwn(state,'flightState'))delete world.flightState;if(Number.isFinite(state.heading)){view.yaw=state.heading;shownHeading=state.heading;}animator.reset(world);jumpFX.reset(world);impacts.wasGrounded=world.grounded;},peerVisuals:()=>[...multiplayer.avatars.values()].map(a=>({position:a.root.position.toArray(),visible:a.model.visible,validRig:Object.values(a.animation?.bones||{}).every(b=>b.bone.quaternion.toArray().every(Number.isFinite))}))};
+ if(import.meta.env.DEV)window.__velocity.debug={visuals:()=>inspectHero(runner,camera),place:state=>{Object.assign(world,state);if(Object.hasOwn(state,'flying')&&!Object.hasOwn(state,'flightState'))delete world.flightState;if(Number.isFinite(state.heading)){view.yaw=state.heading;shownHeading=state.heading;}if(Number.isFinite(state.viewYaw))view.yaw=state.viewYaw;if(Number.isFinite(state.viewPitch))view.pitch=state.viewPitch;animator.reset(world);jumpFX.reset(world);impacts.wasGrounded=world.grounded;},peerVisuals:()=>[...multiplayer.avatars.values()].map(a=>({position:a.root.position.toArray(),visible:a.model.visible,validRig:Object.values(a.animation?.bones||{}).every(b=>b.bone.quaternion.toArray().every(Number.isFinite))}))};
 }catch(error){console.error(error);$('start-label').textContent='Reload to retry';$('start').disabled=false;$('start').onclick=()=>location.reload();showToast('An asset could not load. Reload to try again.',30000);}}
 function keysClear(){Object.keys(keys).forEach(k=>keys[k]=false);jumpQueued=false;}
 function readRecords(){try{const d=JSON.parse(localStorage.getItem('velocity-austin'));if(d&&Number.isFinite(d.distance)&&Number.isFinite(d.topSpeed)&&Number.isFinite(d.pickups))return d;}catch{}return {distance:0,topSpeed:0,pickups:0};}
@@ -89,12 +92,18 @@ function updateScene(dt){
  if(active&&animationDt>0)poseHero(animator,runner,world,animationDt,shownHeading);impacts.update(world,active?dt:0);
  multiplayer?.update(dt);
  boostCamera+=(Number(world.boosting)-boostCamera)*(1-Math.exp(-dt*5));
- const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=7+boostCamera*3,horizontal=Math.cos(pitch)*distance;
- const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,world.y+1.25+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);
+ const flight=world.hero==='atlas'&&world.flying,fx=flightView(world,dt,reducedMotion);
+ const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=7+boostCamera*3+fx.lag,horizontal=Math.cos(pitch)*distance;
+ const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,world.y+(flight?3.4:1.25)+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);
  const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
  const quake=impacts.camera(reducedMotion);target.x+=quake.shake;target.y+=quake.dip;
  followHeroCamera(camera,target,world,map.collider,dt);
- camera.lookAt(Math.sin(yaw)*1.7,world.y+1.35,-Math.cos(yaw)*1.7);camera.fov=58+boostCamera*18+jumpCamera.fov;camera.updateProjectionMatrix();
+ const lead=1.7+fx.lag;
+ camera.lookAt(Math.sin(yaw)*lead,world.y+(flight?1.75:1.35),-Math.cos(yaw)*lead);
+ camera.fov=58+(flight?fx.fov:world.hero==='atlas'?0:boostCamera*18)+jumpCamera.fov;
+ camera.updateProjectionMatrix();
+ updateSky(world,world.y-(map.collider.terrain(world.x,world.z).height));
+
 }
 $('start').onclick=()=>{if(loaded)reset();};$('pause').onclick=pause;$('resume').onclick=pause;$('restart').onclick=reset;
 window.addEventListener('keydown',event=>{if($('info-dialog').open)return;const k=event.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))event.preventDefault();if(k==='m'&&!event.repeat&&loaded){showMap();return;}if(k==='escape'){if(!event.repeat)pause();return;}if(k==='enter'&&world.status==='ready'&&loaded){reset();return;}if(k===' '&&!event.repeat)jumpQueued=true;keys[k]=true;});

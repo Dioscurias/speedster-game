@@ -11,6 +11,8 @@ import {JumpFX} from './jump-fx.js';
 import {Multiplayer} from './multiplayer.js';
 import {styleSuperhero} from './superhero.js';
 import {stepHero,resetFlight,flightTelemetry} from './powerhouse.js';
+import {createFlightView} from './flight-view.js';
+import './flight-view.css';
 import {poseHero,inspectHero,followHeroCamera} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
 import {selectedHero,wireHeroControls} from './hero-controls.js';
@@ -20,6 +22,7 @@ document.body.innerHTML=`<div id="parkour-scene"></div><header><strong>THE LAST 
 const $=id=>document.getElementById(id),keys={};let abilities=createAbilities(undefined,()=>world.hero),abilityTime=0,teleportQueued=false,wasAiming=false;let jumpQueued=false,view={yaw:0,pitch:.34},accumulator=0,last=performance.now(),apexBeat=0;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#f5a16e');scene.fog=new THREE.FogExp2('#f5a16e',.0018);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;$('parkour-scene').appendChild(renderer.domElement);
+const flightView=createFlightView($('parkour-scene'));
 const camera=new THREE.PerspectiveCamera(58,1,.08,2500);scene.add(new THREE.HemisphereLight('#ffcfaa','#402b43',2));
 const sun=new THREE.DirectionalLight('#ffe0ad',3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:180});sun.shadow.normalBias=.03;scene.add(sun,sun.target);
 let course=createCourse(),map=buildParkourMap(scene,course),world=createWorld(course.spawn),runner=new THREE.Group(),animator,fx;scene.add(runner);const combat=new ParkourCombat(scene);course.blockedVolume=(...args)=>combat.blockedVolume(...args)||map.blockedVolume(...args);$('motion-speed').oninput=()=>course.motionSpeed=Number($('motion-speed').value);
@@ -65,8 +68,9 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
  if(animator){const pose=animator.update(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,viewYaw:view.yaw},simulationDelta);if(abilities.status(abilityTime).aiming){animator.bodyBend('RightArm',-1.2);animator.bodyBend('RightForeArm',-.2);}runner.position.set(0,world.y-pose.crouch*.04,0);runner.rotation.y=-world.heading;fx.update(world,simulationDelta,$('reduced').checked);}
  if(animator&&world.status==='running'&&simulationDelta>0)poseHero(animator,runner,world,simulationDelta);multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
  boostCamera+=(Number(world.boosting)-boostCamera)*(1-Math.exp(-dt*5));
- const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=7+boostCamera*3,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake+($('reduced').checked?0:Math.sin(world.worldTime*97)*combat.shake),world.y+1.25+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
- followHeroCamera(camera,target,world,world.hero==='atlas'?map.flightCollider:course.collider,dt);camera.lookAt(Math.sin(view.yaw)*1.7,world.y+1.35,-Math.cos(view.yaw)*1.7);camera.fov=THREE.MathUtils.lerp(camera.fov,58+boostCamera*18+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
+ const flight=world.hero==='atlas'&&world.flying,flightFx=flightView(world,dt,$('reduced').checked);
+ const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=7+boostCamera*3+flightFx.lag,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake+($('reduced').checked?0:Math.sin(world.worldTime*97)*combat.shake),world.y+(flight?3.4:1.25)+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
+ followHeroCamera(camera,target,world,world.hero==='atlas'?map.flightCollider:course.collider,dt);const lead=1.7+flightFx.lag;camera.lookAt(Math.sin(view.yaw)*lead,world.y+(flight?1.75:1.35),-Math.cos(view.yaw)*lead);camera.fov=THREE.MathUtils.lerp(camera.fov,58+(flight?flightFx.fov:world.hero==='atlas'?0:boostCamera*18)+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
   const hand=new THREE.Vector3(.35,world.y+1.2,0);runner.updateMatrixWorld(true);animator.bones.RightHand?.bone.getWorldPosition(hand);hand.x+=world.x;hand.z+=world.z;
   combat.root.position.set(-world.x,0,-world.z);
   const aimTarget=combat.aim(camera,hand,world,map),held=world.hero==='atlas'&&world.status==='running'&&!!(keys.f||keys.aimMouse);

@@ -1,4 +1,4 @@
-import {stepWorld,PHYSICS,createCollider} from './game.js';
+import {stepWorld,PHYSICS,BOOST_MIN_ENERGY,createCollider} from './game.js';
 
 export const ATLAS_PHYSICS=Object.freeze({...PHYSICS,runSpeed:24,boostSpeed:65,jumpSpeed:28,jumpCutSpeed:20,airAcceleration:25,wallRunning:false});
 const empty=createCollider();
@@ -78,7 +78,7 @@ function moveFlight(w,c,dt){
 }
 function flightTick(w,input,dt,c){
  if(!input.boost)w.boostExhausted=false;
- if(w.energy<=2&&input.boost)w.boostExhausted=true;
+ if(w.energy<=BOOST_MIN_ENERGY&&input.boost)w.boostExhausted=true;
  w.punchTime=Math.max(0,(w.punchTime||0)-dt);
  const slam=input.slam||w.slamRequested;w.slamRequested=false;
  if(slam&&!w.grounded){setFlightState(w,'flying');w.slamming=true;w.launchTime=0;}

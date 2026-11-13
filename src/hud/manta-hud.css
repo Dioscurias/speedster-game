@@ -1,5 +1,5 @@
 .manta-hud{
- --instrument-ink:#fff;--instrument-black:#101010;--instrument-surface:#101010dc;--instrument-line:#ffffff70;--instrument-damage:#ff6255;
+ --instrument-ink:#fff;--instrument-black:#101010;--instrument-surface:rgba(0,0,0,.35);--instrument-line:rgba(255,255,255,.15);--instrument-panel-padding:9px 12px;--instrument-damage:#ff6255;
  --instrument-pad:clamp(20px,2vw,34px);--instrument-radar:clamp(96px,13vw,160px);--instrument-font:"Space Grotesk",system-ui,sans-serif;
  position:absolute;inset:0;z-index:15;pointer-events:none;color:var(--instrument-ink);
  font:500 13px/1.25 var(--instrument-font);font-variant-numeric:tabular-nums
@@ -10,7 +10,7 @@
 .manta-hud :is(.instrument-location,.instrument-vitals,.instrument-speed,.instrument-ability,.instrument-hint,.instrument-event){
  background:var(--instrument-surface);border:1px solid var(--instrument-line);border-radius:0
 }
-.instrument-location{position:absolute;top:var(--instrument-pad);left:var(--instrument-pad);display:grid;gap:4px;padding:9px 12px;max-width:calc(100% - var(--instrument-radar) - 76px)}
+.instrument-location{position:absolute;top:var(--instrument-pad);left:var(--instrument-pad);display:grid;gap:4px;padding:var(--instrument-panel-padding);max-width:calc(100% - var(--instrument-radar) - 76px)}
 .instrument-location strong{font-size:14px;overflow-wrap:anywhere}.instrument-location small{opacity:.55}
 .instrument-navigation{position:absolute;top:var(--instrument-pad);right:var(--instrument-pad);display:flex;gap:8px;text-align:center}
 .instrument-map{position:relative;width:var(--instrument-radar);display:grid;gap:5px}
@@ -19,9 +19,9 @@
 .instrument-north{position:absolute;inset:0 0 auto;height:var(--instrument-radar);transform:rotate(var(--north,0rad));text-align:center;font-size:9px}
 .instrument-map>[data-hud-heading]{background:var(--instrument-black);justify-self:center;padding:2px 6px}
 .instrument-tools{display:grid;align-content:start;gap:4px}
-.manta-game .instrument-tools button{display:grid;place-items:center;pointer-events:auto;cursor:pointer;margin:0;padding:0;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid var(--instrument-line);border-radius:0;background:var(--instrument-black);color:var(--instrument-ink);box-shadow:none}
-.instrument-tools button:hover{border-color:var(--instrument-ink)}.instrument-tools button:disabled{opacity:.45;cursor:default}.instrument-tools svg{width:14px;height:14px}
-.instrument-vitals,.instrument-speed{position:absolute;bottom:var(--instrument-pad);padding:8px 10px;width:clamp(128px,15vw,210px)}
+.manta-game .instrument-tools :is(button,a){display:grid;place-items:center;pointer-events:auto;cursor:pointer;margin:0;padding:0;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid var(--instrument-line);border-radius:0;background:var(--instrument-black);color:var(--instrument-ink);box-shadow:none}
+.instrument-tools :is(button,a):hover{border-color:var(--instrument-ink)}.instrument-tools button:disabled{opacity:.45;cursor:default}.instrument-tools svg{width:14px;height:14px}
+.instrument-vitals,.instrument-speed{position:absolute;bottom:var(--instrument-pad);padding:var(--instrument-panel-padding);width:clamp(128px,15vw,210px)}
 .instrument-vitals{left:var(--instrument-pad);display:grid;gap:8px}.instrument-speed{right:var(--instrument-pad);text-align:right}
 .instrument-line{display:grid;grid-template-columns:4.5em 1fr 2em;align-items:center;gap:6px}.instrument-line output{text-align:right}
 .instrument-meter{height:5px;min-width:0;background:#ffffff25}.instrument-meter i{display:block;width:100%;height:100%;transform-origin:left;transition:transform .15s linear;background:var(--instrument-ink)}
@@ -35,11 +35,12 @@
 .instrument-abilities{display:flex;justify-content:center;flex-wrap:wrap;gap:3px}
 .manta-game .manta-hud .instrument-ability{pointer-events:auto;cursor:pointer;margin:0;color:inherit;font:inherit;position:relative;display:flex;align-items:center;gap:4px;padding:4px 5px;white-space:nowrap;font-size:10px}
 .instrument-ability i{position:absolute;inset:auto 0 0;height:1px;background:var(--instrument-ink);transform-origin:left}
-.manta-hud.is-paused .instrument-ability{pointer-events:none}.instrument-ability.is-cooling{opacity:.56}.instrument-ability kbd{font:700 10px var(--instrument-font)}
+.manta-hud.is-paused .instrument-ability{pointer-events:none}.instrument-ability:is([data-state=cooling],[data-state=unavailable]){opacity:.56}
+.instrument-ability[data-state=active]{border-color:var(--instrument-ink)}.instrument-ability kbd{font:700 10px var(--instrument-font)}
 .instrument-hint,.instrument-event{margin:0;padding:4px 6px;opacity:0;transition:opacity .18s linear;text-align:center;font-size:11px}
 .instrument-event{position:absolute;bottom:100%;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:1100px){.instrument-bottom{bottom:calc(var(--instrument-pad) + 118px)}}
 @media(max-width:520px){.manta-hud{--instrument-radar:88px}.instrument-line{grid-template-columns:3.8em 1fr 1.8em}.instrument-speed output{font-size:24px}}
 @media(pointer:coarse){.manta-hud .instrument-vitals,.manta-hud .instrument-speed{bottom:calc(var(--instrument-pad) + 94px)}.instrument-bottom{bottom:calc(var(--instrument-pad) + 212px)}}
 @media(prefers-reduced-motion:reduce){.manta-hud *{transition:none!important;animation:none!important}}
-.manta-hud .instrument-ability kbd{background:none;color:inherit;border:0;box-shadow:none;padding:0}
+.manta-hud .instrument-ability kbd{background:var(--instrument-black);color:var(--instrument-ink);border:1px solid currentColor;border-radius:0;box-shadow:none;padding:0 3px}

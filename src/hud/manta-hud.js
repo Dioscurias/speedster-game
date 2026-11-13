@@ -14,14 +14,14 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
  <section class="instrument-location"><span class="instrument-label">${parkour?'The Last Household':'Austin'}</span><strong data-hud-street></strong><small data-hud-network></small></section>
  <section class="instrument-navigation" aria-label="Navigation">
   <div class="instrument-map"><button class="hud-radar" type="button" title="Expand map" aria-label="Expand map"><canvas data-hud-radar aria-label="Nearby points of interest"></canvas></button><span class="instrument-north" aria-hidden="true">N</span><span class="instrument-label" data-hud-heading>N 0°</span></div>
-  <div class="instrument-tools">${tool('quality','Graphics quality','look')}${tool('pause','Pause game','pause')}${tool('fullscreen','Toggle fullscreen','expand')}${tool('guide','Guide','guide')}</div>
+  <div class="instrument-tools">${tool('quality','Graphics quality','look')}${tool('pause','Pause game','pause')}${tool('fullscreen','Toggle fullscreen','expand')}${tool('guide','Guide','guide')}<a href="https://manta.bet/" target="_top" title="Back to manta.bet" aria-label="Back to manta.bet">${icon('home')}</a></div>
  </section>
  <section class="instrument-vitals">
   <div class="instrument-line" data-hud-health-row><span class="instrument-label">Health</span>${meter('health','Health')}<output data-hud-health>100</output></div>
   <div class="instrument-line"><span class="instrument-label">Energy</span>${meter('energy','Energy')}<output data-hud-energy>100</output></div>
  </section>
  <section class="instrument-speed" aria-label="Velocity">
-  <span class="instrument-label">Hero Roam / Velocity</span>
+  <span class="instrument-label">Speed</span>
   <div><output data-hud-speed>0</output> <span class="instrument-label">km/h</span></div>
   ${meter('speed','Speed relative to limit')}
   <div class="instrument-flight" data-hud-flight hidden><span data-hud-flight-state></span><span data-hud-altitude></span></div>
@@ -83,7 +83,8 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
    for(const entry of abilityReadouts(state,parkour)){
     const {node,fill}=tools.get(entry.label);
     visible.add(entry.label);
-    node.classList.toggle('is-cooling',entry.ready<1);
+    node.dataset.state=entry.status;
+    node.setAttribute('aria-label',`${entry.label} (${entry.status})`);
     fill.style.transform=`scaleX(${entry.ready})`;
    }
    for(const [label,{node}] of tools)node.hidden=!visible.has(label);
