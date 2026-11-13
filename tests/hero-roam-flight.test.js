@@ -92,3 +92,20 @@ test('boost reaches zero before switching to cruise and emits both boost events'
  assert.equal(flightSnapshot(w).state,'CRUISE');
  assert.equal(flightSnapshot(w).canBoost,false);
 });
+
+test('a capsule can traverse a narrow gap and slides after a full-speed glancing wall hit',()=>{
+ const box=(x1,x2)=>({height:60,polygon:[[x1,-25],[x2,-25],[x2,25],[x1,25]]});
+ const c=createCollider([box(-8,-.6),box(.6,8)]);
+ const straight=atlas({y:20,z:32,grounded:false,vz:-FLIGHT.boostSpeed});
+ resetFlight(straight,'HOVER');
+ simulate(straight,{forward:true,boost:true},.65,c);
+ assert.ok(straight.z < -25);
+ assert.equal(c.blocked(straight.x,straight.z,straight.y),false);
+ const glancing=atlas({y:20,z:10,grounded:false,vx:75,vz:-100});
+ resetFlight(glancing,'HOVER');
+ simulate(glancing,{forward:true,boost:true},.1,c);
+ const hit=flightSnapshot(glancing,c);
+ assert.equal(hit.state,'WALL_CONTACT');
+ assert.ok(glancing.vz < -70);
+ assert.equal(c.blocked(glancing.x,glancing.z,glancing.y),false);
+});

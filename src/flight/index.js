@@ -92,7 +92,7 @@ function tick(w,m,input,c){
  if(m.state!=='TAKEOFF'&&!m.slam&&(m.state!=='WALL_CONTACT'||m.age>=C.wallDuration||input.brake)){
   if(input.boost&&w.energy<C.boostMinimum&&m.state!=='BOOST')m.exhausted=true;
   const canBoost=!m.exhausted&&(m.state==='BOOST'?w.energy>0:w.energy>=C.boostMinimum);
-  const dive=input.descend&&control.pitch>C.downPitch&&speed>=C.diveSpeed;
+  const dive=input.descend&&control.pitch>C.downPitch&&(speed>=C.diveSpeed||m.state==='DIVE_SLAM');
   const next=input.brake?'BRAKE':dive?'DIVE_SLAM':moving&&input.boost&&canBoost?'BOOST':moving?(control.planar?'CRUISE':'HOVER'):speed>C.hoverSpeed?'GLIDE':'HOVER';
   if(next==='GLIDE'&&m.state!=='GLIDE')m.glideSpeed=speed;
   transition(w,m,next,'flight input and momentum');

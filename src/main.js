@@ -108,7 +108,7 @@ function updateScene(dt){
  const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
  const quake=impacts.camera(reducedMotion);target.x+=quake.shake;target.y+=quake.dip;
  followHeroCamera(camera,target,visual,map.collider,dt);
- const lead=1.7+fx.lag;
+ const lead=(flying?C.cameraLead:1.7)+fx.lag;
  camera.lookAt(Math.sin(yaw)*lead,rendered.y+(flying?C.cameraLook:1.35),-Math.cos(yaw)*lead);
  bankCamera(camera,world,reducedMotion);
  camera.fov=(flying?C.cameraFov+fx.fov:58+(world.hero==='atlas'?0:boostCamera*18))+jumpCamera.fov;

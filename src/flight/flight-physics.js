@@ -34,7 +34,7 @@ export function integrate(w,control,motion,c,dt){
  const {state,boostRamp,glideSpeed,slam}=motion,{direction,lift,planar}=control;
  const before=[w.vx,w.vy,w.vz];
  const cap=C.cruiseSpeed+(C.boostSpeed-C.cruiseSpeed)*boostRamp;
- let desired=unit(direction).map(value=>value*cap);
+ let desired=unit(direction).map(value=>value*(state==='DIVE_SLAM'?Math.max(C.diveSpeed,Math.min(C.boostSpeed,length(before)),cap):cap));
  if(!planar&&boostRamp===0&&state!=='DIVE_SLAM')desired=[0,lift*C.verticalSpeed,0];
  if(state==='BRAKE')desired=[0,lift*C.verticalSpeed,0];
  if(slam)desired=[0,-C.slamSpeed,0];

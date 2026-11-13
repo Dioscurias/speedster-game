@@ -4,7 +4,7 @@ import {FLIGHT as C} from './flight-config.js';
 
 export function stabilizeFlightCamera(camera,target,w){
  if(w.hero!=='atlas'||!w.flying)return;
- camera.position.y=clamp(camera.position.y,target.y-3,target.y+3);
+ camera.position.y=clamp(camera.position.y,target.y-C.cameraHeightLag,target.y+C.cameraHeightLag);
 }
 
 export function followHeroCamera(camera,target,w,collider,dt){
