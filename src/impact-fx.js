@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export class ImpactFX {
  constructor(scene){
   this.root=new THREE.Group();scene.add(this.root);this.scars=[];this.particles=[];this.rings=[];this.ids=new Set();this.kick=0;this.time=0;this.wasGrounded=true;
-  this.rubbleGeometry=new THREE.IcosahedronGeometry(1,0);this.rubbleMaterial=new THREE.MeshStandardMaterial({color:'#79776f',roughness:1});this.lastWake=0;
+  this.rubbleGeometry=new THREE.IcosahedronGeometry(1,0);this.rubbleMaterial=new THREE.MeshStandardMaterial({color:'#79776f',roughness:1});
  }
  observe(w,emit){
   if(w.status!=='running')return;
@@ -32,7 +32,6 @@ export class ImpactFX {
  disposeGroup(group){this.root.remove(group);group.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}
  update(w,dt){
   this.world=w;this.root.position.set(-w.x,0,-w.z);this.time+=dt;this.kick=Math.max(0,this.kick-dt*2.4);
-  if(dt>0&&w.flying&&w.boosting&&this.time-this.lastWake>.12){this.lastWake=this.time;const ring=new THREE.Mesh(new THREE.RingGeometry(.94,1,36),new THREE.MeshBasicMaterial({color:'#b6eaff',transparent:true,opacity:.25,side:THREE.DoubleSide,depthWrite:false}));ring.position.set(w.x,w.y+.9,w.z);const velocity=new THREE.Vector3(w.vx,w.vy,w.vz).normalize();ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),velocity);this.root.add(ring);this.rings.push({mesh:ring,age:0,radius:1.2});}
   for(let i=this.rings.length-1;i>=0;i--){const p=this.rings[i];p.age+=dt;if(p.age>.7){this.disposeGroup(p.mesh);this.rings.splice(i,1);continue;}p.mesh.scale.setScalar(p.radius*(1+p.age*7));p.mesh.material.opacity=.65*(1-p.age/.7);}
   for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.age+=dt;if(p.age>1.4){this.root.remove(p.mesh);this.particles.splice(i,1);continue;}p.velocity.y-=18*dt;p.mesh.position.addScaledVector(p.velocity,dt);p.mesh.rotation.x+=dt*5;p.mesh.rotation.z+=dt*3;p.mesh.scale.multiplyScalar(Math.exp(-dt*.6));}
  }

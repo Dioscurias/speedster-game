@@ -11,7 +11,12 @@ import {JumpFX} from './jump-fx.js';
 import {Multiplayer} from './multiplayer.js';
 import {styleSuperhero} from './superhero.js';
 import {stepHero,resetFlight,flightTelemetry} from './powerhouse.js';
-import {createFlightView} from './flight-view.js';
+
+import {createFlightView} from './flight/flight-fx.js';
+import {createFlightDebug} from './flight/flight-debug.js';
+import {bankCamera} from './flight/flight-camera.js';
+import {FLIGHT as C} from './flight/flight-config.js';
+import {flightSnapshot,renderPosition} from './flight/index.js';
 import './flight-view.css';
 import {poseHero,inspectHero,followHeroCamera} from './hero-visuals.js';
 import {ImpactFX} from './impact-fx.js';
@@ -22,7 +27,8 @@ document.body.innerHTML=`<div id="parkour-scene"></div><header><strong>THE LAST 
 const $=id=>document.getElementById(id),keys={};let abilities=createAbilities(undefined,()=>world.hero),abilityTime=0,teleportQueued=false,wasAiming=false;let jumpQueued=false,view={yaw:0,pitch:.34},accumulator=0,last=performance.now(),apexBeat=0;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#f5a16e');scene.fog=new THREE.FogExp2('#f5a16e',.0018);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;$('parkour-scene').appendChild(renderer.domElement);
-const flightView=createFlightView($('parkour-scene'));
+const flightDebug=createFlightDebug(scene,$('parkour-scene'));
+const flightView=createFlightView($('parkour-scene'),scene);
 const camera=new THREE.PerspectiveCamera(58,1,.08,2500);scene.add(new THREE.HemisphereLight('#ffcfaa','#402b43',2));
 const sun=new THREE.DirectionalLight('#ffe0ad',3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:180});sun.shadow.normalBias=.03;scene.add(sun,sun.target);
 let course=createCourse(),map=buildParkourMap(scene,course),world=createWorld(course.spawn),runner=new THREE.Group(),animator,fx;scene.add(runner);const combat=new ParkourCombat(scene);course.blockedVolume=(...args)=>combat.blockedVolume(...args)||map.blockedVolume(...args);$('motion-speed').oninput=()=>course.motionSpeed=Number($('motion-speed').value);
@@ -50,27 +56,36 @@ Object.assign(window.__parkour,{getPeers:()=>[...(multiplayer?.avatars.values()|
 if(import.meta.env.DEV)window.__parkour.debug={visuals:()=>inspectHero(runner,camera)};
 const notify=text=>window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}));
 let boostCamera=0;
+function flightEvent(type,detail){
+ window.dispatchEvent(new CustomEvent('atlas:flight',{detail:{type,data:detail}}));
+ if(type==='impact')impacts.kick=Math.max(impacts.kick,world.impact);
+}
 function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(rawDt,.05);last=now;let simulationDelta=0;
  if(animator&&world.status==='running'){
   abilityTime+=dt;
   if(teleportQueued&&world.hero!=='atlas')teleportQueued=false;
   if(teleportQueued){teleportQueued=false;const direction=(keys.f||keys.aimMouse)?{x:Math.sin(view.yaw),z:-Math.cos(view.yaw)}:{x:Math.sin(world.heading),z:-Math.cos(world.heading)};const destination=findTeleport(world,direction,course);if(!destination)notify('Blink blocked · aim at a clear platform');else if(!abilities.spendTeleport(abilityTime))notify('Blink recharging');else{combat.blink(world,destination);Object.assign(world,destination,{vx:0,vy:0,vz:0,speed:0,grounded:true,jumpBuffer:0});resetFlight(world);fx.reset(world);}}
   view=updateView(view,{left:keys.arrowleft,right:keys.arrowright,up:keys.arrowup,down:keys.arrowdown},dt,world.flying);
-  const scale=apexBeat>0?.65:1;apexBeat=Math.max(0,apexBeat-dt);accumulator+=dt*scale;
+  const scale=!world.flying&&apexBeat>0?.65:1;apexBeat=Math.max(0,apexBeat-dt);accumulator+=dt*scale;
   while(accumulator>=1/120&&world.status==='running'){
-   course.advance(1/120,world);const vy=world.vy;stepHero(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,boost:keys.shift,ascend:keys[' '],descend:keys.c,brake:keys.b,slam:keys.x,viewYaw:view.yaw,viewPitch:view.pitch,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,world.hero==='atlas'?map.flightCollider:course.collider,PARKOUR);heroControls.update();impacts.observe(world,heroControls.emit);jumpQueued=false;simulationDelta+=1/120;accumulator-=1/120;
-   if($('apex').checked&&!$('reduced').checked&&vy>0&&world.vy<=0&&!world.grounded)apexBeat=.06;
+   course.advance(1/120,world);const vy=world.vy;stepHero(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,boost:keys.shift,ascend:keys[' '],descend:keys.c,brake:keys.b,slam:keys.x,viewYaw:view.yaw,viewPitch:view.pitch,jump:jumpQueued,jumpHeld:!!keys[' ']},1/120,world.hero==='atlas'?map.flightCollider:course.collider,PARKOUR,flightEvent);heroControls.update();impacts.observe(world,heroControls.emit);jumpQueued=false;simulationDelta+=1/120;accumulator-=1/120;
+   if(!world.flying&&$('apex').checked&&!$('reduced').checked&&vy>0&&world.vy<=0&&!world.grounded)apexBeat=.06;
    const result=course.update(world);if(result.respawned){world.hero=selectedHero();resetFlight(world);world.slamRequested=false;world.punchPending=false;world.punchTime=0;world.flightBank=0;clearInput();abilities.cancelAim();wasAiming=false;animator.reset(world);fx.reset(world);impacts.wasGrounded=true;view.yaw=0;apexBeat=0;}
    if(result.complete){clearInput();overlay('You made it.',`${result.collected} / ${result.total} orbs · ${world.elapsed.toFixed(1)} seconds${result.collected===result.total?' · Perfect clear':''}`,'Play again');$('restart').hidden=true;}
   }
  }else accumulator=0;
- const progress=course.update(world);map.update(world,world.worldTime,progress.zone);$('zone').textContent=progress.name;$('score').textContent=`${progress.collected} / 15 orbs · Checkpoint ${progress.zone} / 5`;
- if(animator){const pose=animator.update(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,viewYaw:view.yaw},simulationDelta);if(abilities.status(abilityTime).aiming){animator.bodyBend('RightArm',-1.2);animator.bodyBend('RightForeArm',-.2);}runner.position.set(0,world.y-pose.crouch*.04,0);runner.rotation.y=-world.heading;fx.update(world,simulationDelta,$('reduced').checked);}
- if(animator&&world.status==='running'&&simulationDelta>0)poseHero(animator,runner,world,simulationDelta);multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
+ const rendered=renderPosition(world,accumulator),flight=flightSnapshot(world);
+ const visual={...world,...rendered,flight,flightState:flight?.state};
+ flightDebug(visual,flight);
+ const progress=course.update(world);map.update({...world,...rendered},world.worldTime,progress.zone);$('zone').textContent=progress.name;$('score').textContent=`${progress.collected} / 15 orbs · Checkpoint ${progress.zone} / 5`;
+ if(animator){const pose=animator.update(world,{forward:keys.w,backward:keys.s,left:keys.a,right:keys.d,viewYaw:view.yaw},simulationDelta);if(abilities.status(abilityTime).aiming){animator.bodyBend('RightArm',-1.2);animator.bodyBend('RightForeArm',-.2);}runner.position.set(0,rendered.y-pose.crouch*.04,0);runner.rotation.y=-world.heading;fx.update(world,simulationDelta,$('reduced').checked);}
+ if(animator&&world.status==='running'&&simulationDelta>0)poseHero(animator,runner,visual,simulationDelta);
+ if(flight&&animator){world.flightState=flight.state;world.flightOrientation=runner.quaternion.toArray();}
+ multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
  boostCamera+=(Number(world.boosting)-boostCamera)*(1-Math.exp(-dt*5));
- const flight=world.hero==='atlas'&&world.flying,flightFx=flightView(world,dt,$('reduced').checked);
- const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=7+boostCamera*3+flightFx.lag,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake+($('reduced').checked?0:Math.sin(world.worldTime*97)*combat.shake),world.y+(flight?3.4:1.25)+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
- followHeroCamera(camera,target,world,world.hero==='atlas'?map.flightCollider:course.collider,dt);const lead=1.7+flightFx.lag;camera.lookAt(Math.sin(view.yaw)*lead,world.y+(flight?1.75:1.35),-Math.cos(view.yaw)*lead);camera.fov=THREE.MathUtils.lerp(camera.fov,58+(flight?flightFx.fov:world.hero==='atlas'?0:boostCamera*18)+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
+ const flying=world.hero==='atlas'&&world.flying,flightFx=flightView(visual,dt,$('reduced').checked,animator);
+ const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=flying?C.cameraDistance+boostCamera*C.cameraExtension+flightFx.lag:7+boostCamera*3,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake+($('reduced').checked?0:Math.sin(world.worldTime*97)*combat.shake),rendered.y+(flying?C.cameraHeight:1.25)+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
+ followHeroCamera(camera,target,visual,world.hero==='atlas'?map.flightCollider:course.collider,dt);const lead=1.7+flightFx.lag;camera.lookAt(Math.sin(view.yaw)*lead,rendered.y+(flying?C.cameraLook:1.35),-Math.cos(view.yaw)*lead);bankCamera(camera,world,$('reduced').checked);camera.fov=THREE.MathUtils.lerp(camera.fov,(flying?C.cameraFov+flightFx.fov:58+(world.hero==='atlas'?0:boostCamera*18))+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
   const hand=new THREE.Vector3(.35,world.y+1.2,0);runner.updateMatrixWorld(true);animator.bones.RightHand?.bone.getWorldPosition(hand);hand.x+=world.x;hand.z+=world.z;
   combat.root.position.set(-world.x,0,-world.z);
   const aimTarget=combat.aim(camera,hand,world,map),held=world.hero==='atlas'&&world.status==='running'&&!!(keys.f||keys.aimMouse);

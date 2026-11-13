@@ -50,32 +50,3 @@ export function createAustinSky(scene,camera,sun){
   if(camera.far!==far){camera.far=far;camera.updateProjectionMatrix();}
  };
 }
-
-export function createFlightView(sceneElement){
- const wind=document.createElement('div');
- wind.className='flight-wind';
- wind.setAttribute('aria-hidden','true');
- for(const side of [-1,1])for(let i=0;i<7;i++){
-  const line=document.createElement('i');
-  line.style.setProperty('--angle',`${side*(i-3)*8}deg`);
-  line.style.setProperty('--edge',`${7+(i*7%13)}%`);
-  line.style.setProperty('--height',`${13+i*12}%`);
-  line.style.setProperty('--delay',`${-i*.137-side*.09}s`);
-  wind.append(line);
- }
- sceneElement.append(wind);
- let speedFov=0,movement=0,lag=0;
- return (world,dt,reducedMotion)=>{
-  const flying=world.hero==='atlas'&&world.flying;
-  const speed=flying?THREE.MathUtils.smoothstep(world.speed,4,100):0;
-  const ease=1-Math.exp(-dt*7);
-  speedFov+=((reducedMotion?0:speed*15)-speedFov)*ease;
-  movement+=((reducedMotion?0:speed*(world.boosting?1:.62))-movement)*ease;
-  lag+=((flying&&world.boosting&&!reducedMotion?speed*.9:0)-lag)*ease;
-  wind.style.visibility=movement<.005?'hidden':'visible';
-  wind.style.opacity=movement<.005?'0':String(Math.sqrt(movement)*.78);
-  wind.style.setProperty('--wind-size',.45+movement*.8);
-  wind.style.setProperty('--wind-time',`${1.25-movement*.74}s`);
-  return {fov:speedFov,lag};
- };
-}

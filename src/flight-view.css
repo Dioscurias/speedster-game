@@ -12,3 +12,5 @@
  to{transform:translateX(155%) rotate(var(--angle)) scaleX(var(--wind-size));opacity:0}
 }
 @media(prefers-reduced-motion:reduce){.flight-wind{display:none}}
+.flight-wind.has-boost{box-shadow:inset 0 0 12vw #22384a38}
+.flight-debug{position:absolute;z-index:9;top:23%;left:2%;margin:0;max-width:55vw;overflow-wrap:anywhere;white-space:pre-wrap;padding:.7rem;background:#101820e8;color:#c2f5d3;pointer-events:none;font:12px/1.35 monospace}
