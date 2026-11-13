@@ -21,7 +21,7 @@ try{
  await p.keyboard.down('Shift');await p.keyboard.down(' ');await p.waitForTimeout(800);await p.keyboard.up(' ');await p.keyboard.up('Shift');await p.waitForTimeout(150);await visible();
  await p.keyboard.down(' ');await p.keyboard.down('Shift');await p.waitForTimeout(700);await p.keyboard.down('b');await p.waitForTimeout(500);assert.ok((await read()).w.speed<2);assert.equal((await read()).w.airBraking,true);await p.keyboard.up('b');await p.keyboard.up(' ');await p.keyboard.up('Shift');await p.waitForTimeout(150);await visible();
  if(map==='parkour'){
- await p.locator('[data-hero-key="f"]').click({delay:1300});await p.waitForTimeout(80);assert.equal(await p.locator('#ability-hud').isVisible(),true);assert.ok((await read()).abilities.blast.cooldown>0);await visible();
+ await p.locator('[data-hero-key="f"]').click({delay:1300});await p.waitForTimeout(80);assert.equal(await p.locator('.instrument-abilities').isVisible(),true);assert.ok((await read()).abilities.blast.cooldown>0);await visible();
  }
  await p.keyboard.press('x');await p.waitForTimeout(70);assert.equal((await read()).w.slamming,true);await p.waitForTimeout(1200);await p.waitForTimeout(300);await visible();
  if(map==='parkour'){await p.waitForFunction(()=>window.__parkour.getState().grounded);const before=await read();await p.keyboard.press('e');await p.waitForTimeout(150);const after=await read();assert.equal(after.abilities.teleports.available,2);assert.ok(Math.hypot(after.w.x-before.w.x,after.w.z-before.w.z)>7);await visible();}

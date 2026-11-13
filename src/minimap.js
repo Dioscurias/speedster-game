@@ -24,10 +24,10 @@ function geometry(points,closed=false){
  return {path,bounds};
 }
 
-export function drawPlayerMarker(ctx,x,y,heading,size=15){
+export function drawPlayerMarker(ctx,x,y,heading,size=15,monochrome=false){
  ctx.save();ctx.translate(x,y);ctx.rotate(heading);
  ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.65,size*.8);ctx.lineTo(0,size*.4);ctx.lineTo(-size*.65,size*.8);ctx.closePath();
- ctx.lineJoin='round';ctx.strokeStyle='#101820';ctx.lineWidth=5;ctx.stroke();ctx.strokeStyle='#fff2cd';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#e9bf65';ctx.fill();ctx.restore();
+ ctx.lineJoin='round';ctx.strokeStyle='#101820';ctx.lineWidth=5;ctx.stroke();ctx.strokeStyle='#fff2cd';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=monochrome?'#fff':'#e9bf65';ctx.fill();ctx.restore();
 }
 
 // Cache geographic paths once; only the projection and live markers change.
@@ -45,7 +45,7 @@ export function createMinimapRenderer(map){
  }
  const landmarks=map.buildings.filter(building=>building.name==='Texas State Capitol').map(building=>({x:building.polygon.reduce((sum,p)=>sum+p[0],0)/building.polygon.length,z:building.polygon.reduce((sum,p)=>sum+p[1],0)/building.polygon.length}));
 
- return function drawMap(canvas,world,{players=[],pickups=[],headingUp=false,background='#11181fb0',north=true,scaleLegend=true}={}){
+ return function drawMap(canvas,world,{players=[],pickups=[],headingUp=false,background='#11181fb0',north=true,scaleLegend=true,monochrome=false}={}){
   const metrics=minimapMetrics(canvas.getBoundingClientRect().width||188,globalThis.devicePixelRatio);
   if(canvas.width!==metrics.backingSize||canvas.height!==metrics.backingSize){canvas.width=canvas.height=metrics.backingSize;}
   const ctx=canvas.getContext('2d'),size=metrics.cssSize,center=size/2,scale=metrics.worldScale,view=minimapProjection(world,metrics,{headingUp});
@@ -69,14 +69,14 @@ export function createMinimapRenderer(map){
   ctx.setLineDash([]);ctx.restore();
 
   const inside=(x,z,inset=12)=>{const p=view.project([x,z]);return Math.hypot(p[0]-center,p[1]-center)<center-inset?p:null;};
-  for(const landmark of landmarks){const p=inside(landmark.x,landmark.z,18);if(!p)continue;ctx.fillStyle='#e1c083';ctx.strokeStyle='#18212a';ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(p[0]-2.8,p[1]-2.8,5.6,5.6);ctx.stroke();ctx.fill();}
+  for(const landmark of landmarks){const p=inside(landmark.x,landmark.z,18);if(!p)continue;ctx.fillStyle='#e1c083';ctx.strokeStyle=monochrome?'#fff':'#18212a';ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(p[0]-2.8,p[1]-2.8,5.6,5.6);ctx.stroke();if(!monochrome)ctx.fill();}
   // Only nearby available pickups are shown, keeping the map readable at speed.
   const nearby=pickups.filter(pickup=>pickup.available<=world.elapsed).map(pickup=>({...pickup,distance:Math.hypot(pickup.x-world.x,pickup.z-world.z)})).filter(pickup=>pickup.distance*scale>=24).sort((a,b)=>a.distance-b.distance).slice(0,6);
   for(const pickup of nearby){const p=inside(pickup.x,pickup.z);if(!p||Math.hypot(p[0]-center,p[1]-center)<24)continue;ctx.fillStyle='#e1c083';ctx.beginPath();ctx.arc(...p,1.8,0,Math.PI*2);ctx.fill();}
   for(const player of players){if(player.health<=0)continue;const p=inside(player.x,player.z,9);if(!p)continue;ctx.fillStyle=player.color||'#b7d9ef';ctx.strokeStyle='#151c23';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(...p,4.2,0,Math.PI*2);ctx.stroke();ctx.fill();}
 
   // The player's marker is measured in CSS pixels, independently of map zoom.
-  drawPlayerMarker(ctx,center,center,headingUp?0:world.heading,metrics.playerSize);
+  drawPlayerMarker(ctx,center,center,headingUp?0:world.heading,monochrome?7:metrics.playerSize,monochrome);
 
   ctx.font='500 9px "Space Grotesk", sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.strokeStyle='#11181f';ctx.lineWidth=3;
   if(north){const angle=headingUp?-(world.heading||0):0,radius=center-12,nx=center+Math.sin(angle)*radius,ny=center-Math.cos(angle)*radius;ctx.strokeText('N',nx,ny);ctx.fillStyle='#f2f4f5';ctx.fillText('N',nx,ny);}

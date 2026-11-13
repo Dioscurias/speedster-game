@@ -1,0 +1,10 @@
+{
+  "id": "/hero-roam",
+  "name": "Hero Roam",
+  "short_name": "Hero Roam",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090909",
+  "theme_color": "#090909",
+  "icons": [{ "src": "/speedster-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

@@ -1,56 +1,103 @@
-import {headingMarker,icon,keycap,minimap,segmented,speedRing} from '../ui/components.js';
-import {controlHints,hudView} from './hud-model.js';
+import {icon} from '../ui/components.js';
+import {abilityReadouts,hudView} from './hud-model.js';
 import {HudFeed} from './hud-overlay.js';
 import './manta-hud.css';
 
+const meter=(name,label)=>`<div class="instrument-meter" data-hud-${name}-meter role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-hud-${name}-fill></i></div>`;
+const tool=(id,label,glyph)=>`<button type="button" id="hud-${id}" title="${label}" aria-label="${label}">${icon(glyph)}</button>`;
+
 export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
- const root=document.createElement('div');root.className='manta-hud speedster-hud';root.setAttribute('aria-label','Game status');
- root.innerHTML=`<div class="hud-scrim hud-scrim-top" aria-hidden="true"></div><div class="hud-scrim hud-scrim-bottom" aria-hidden="true"></div><div class="hud-speed-edges" aria-hidden="true"></div>
- <section class="hud-identity hud-surface" data-hud-region="identity" aria-label="Location and health"><div class="hud-location"><strong data-hud-map>${parkour?'The Last Household':'Austin'}</strong><span class="hud-location-separator">/</span><span data-hud-street>${parkour?'Salt Steps':'Congress Avenue'}</span></div><div class="hud-connection"><i data-hud-connection-dot></i><span data-hud-connection>Connecting</span><span class="hud-player-count"><b data-hud-players>1</b> <span data-hud-player-label>player</span></span></div><div class="hud-health-row" data-hud-health-row><span class="hud-label">Health</span><div class="hud-health-meter" data-hud-health-meter role="progressbar" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i data-hud-health-fill></i></div><strong data-hud-health>100</strong></div></section>
- ${minimap(headingMarker())}
- <ol class="hud-events" data-hud-events role="log" aria-label="Game events" aria-live="polite"></ol>
- ${speedRing('SPEEDSTER / VELOCITY')}
- <dl class="hud-stats hud-surface" data-hud-region="stats"><div><dt>Distance</dt><dd><strong data-hud-distance>0</strong><span data-hud-distance-unit>m</span></dd></div><div><dt>Bolts</dt><dd><strong data-hud-bolts>0</strong></dd></div><div><dt>Braking</dt><dd><strong data-hud-braking>${parkour?'—':'0'}</strong><span data-hud-braking-unit>${parkour?'':'m'}</span></dd></div></dl>
- <div class="hud-keys" data-hud-region="keys" aria-label="Controls">${controlHints(parkour).map(hint=>`<span class="hud-key-hint">${keycap(hint.key,hint.display)}<span>${icon(hint.icon)}${hint.label}</span></span>`).join('')}</div>`;
- parent.append(root);const get=name=>root.querySelector(`[data-hud-${name}]`),feed=new HudFeed(),eventNodes=new Map(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- root.querySelector('.hud-tools').innerHTML=`<div class="hud-switches">${segmented('HQ','hud-quality',{active:true,disabled:parkour})}${segmented('Phase','hud-phase',{disabled:parkour})}</div><div class="hud-icon-tools"><button type="button" class="mr-icon-btn" id="hud-pause" aria-label="Pause game">${icon('pause')}</button><button type="button" class="mr-icon-btn" id="hud-fullscreen" aria-label="Toggle fullscreen">${icon('expand')}</button><button type="button" class="mr-icon-btn" id="hud-guide" aria-label="Guide">${icon('guide')}</button></div>`;
- if(parkour){get('connection').textContent='Single player';root.querySelector('#hud-quality').title='Graphics quality is fixed on this map';root.querySelector('#hud-phase').title='Phase is available in Austin';}
- const refs=Object.fromEntries(['health','health-row','health-fill','health-meter','energy','energy-row','energy-meter','speed','top-speed','distance','distance-unit','bolts','braking','braking-unit','street','players','player-label','connection','connection-dot','heading','radar','events'].map(name=>[name,get(name)]));
- let previous=null,reportedPeak=0,recordTime=-Infinity,startedAt=0,lastInput=0,lastTick=0,lastFrame=0,ringAngle=0,flashUntil=0,lastNumericAnimation=0;
- const setText=(name,value,roll=false)=>{const node=refs[name],text=String(value);if(!node||node.textContent===text)return;node.textContent=text;if(roll&&!reduced.matches&&performance.now()-lastNumericAnimation>110){node.animate([{transform:'translateY(5px)',opacity:.45},{transform:'translateY(0)',opacity:1}],{duration:140,easing:'ease-out'});lastNumericAnimation=performance.now();}};
- const clearPressed=()=>root.querySelectorAll('.is-pressed').forEach(node=>node.classList.remove('is-pressed'));
- const onKey=event=>{const key=event.key.toLowerCase(),group='wasd'.includes(key)&&key.length===1?'wasd':key.startsWith('arrow')?'arrows':key;lastInput=performance.now();root.querySelectorAll('[data-key-hint]').forEach(node=>{if(node.dataset.keyHint===group)node.classList.toggle('is-pressed',event.type==='keydown');});};
- const onPointer=()=>lastInput=performance.now();
- window.addEventListener('keydown',onKey);window.addEventListener('keyup',onKey);window.addEventListener('pointerdown',onPointer);window.addEventListener('blur',clearPressed);
- function renderFeed(time){
-  const entries=feed.read(time),ids=new Set(entries.map(entry=>entry.id));for(const [id,node] of eventNodes)if(!ids.has(id)){node.remove();eventNodes.delete(id);}
-  for(const entry of entries){let node=eventNodes.get(entry.id);if(!node){node=document.createElement('li');eventNodes.set(entry.id,node);refs.events.append(node);}node.textContent=entry.message;node.style.opacity=String(entry.opacity);}
+ const root=document.createElement('div');
+ root.className='manta-hud';
+ root.setAttribute('aria-label','Game status');
+ root.innerHTML=`
+ <section class="instrument-location"><span class="instrument-label">${parkour?'The Last Household':'Austin'}</span><strong data-hud-street></strong><small data-hud-network></small></section>
+ <section class="instrument-navigation" aria-label="Navigation">
+  <div class="instrument-map"><button class="hud-radar" type="button" title="Expand map" aria-label="Expand map"><canvas data-hud-radar aria-label="Nearby points of interest"></canvas></button><span class="instrument-north" aria-hidden="true">N</span><span class="instrument-label" data-hud-heading>N 0°</span></div>
+  <div class="instrument-tools">${tool('quality','Graphics quality','look')}${tool('pause','Pause game','pause')}${tool('fullscreen','Toggle fullscreen','expand')}${tool('guide','Guide','guide')}</div>
+ </section>
+ <section class="instrument-vitals">
+  <div class="instrument-line" data-hud-health-row><span class="instrument-label">Health</span>${meter('health','Health')}<output data-hud-health>100</output></div>
+  <div class="instrument-line"><span class="instrument-label">Energy</span>${meter('energy','Energy')}<output data-hud-energy>100</output></div>
+ </section>
+ <section class="instrument-speed" aria-label="Velocity">
+  <span class="instrument-label">Hero Roam / Velocity</span>
+  <div><output data-hud-speed>0</output> <span class="instrument-label">km/h</span></div>
+  ${meter('speed','Speed relative to limit')}
+  <div class="instrument-flight" data-hud-flight hidden><span data-hud-flight-state></span><span data-hud-altitude></span></div>
+ </section>
+ <div class="instrument-bottom"><p class="instrument-hint" data-hud-hint></p><div class="instrument-abilities" aria-label="Abilities"></div><p class="instrument-event" data-hud-event role="status"></p></div>`;
+ parent.append(root);
+ const get=name=>root.querySelector(`[data-hud-${name}]`);
+ const nodes=Object.fromEntries(['street','network','heading','radar','health','energy','speed','flight','flight-state','altitude','hint','event','health-row'].map(name=>[name,get(name)]));
+ const abilities=root.querySelector('.instrument-abilities');
+ const meters=Object.fromEntries(['health','energy','speed'].map(name=>[name,{track:get(name+'-meter'),fill:get(name+'-fill')}]));
+ const quality=root.querySelector('#hud-quality');
+ quality.disabled=parkour;
+ quality.setAttribute('aria-pressed',String(!parkour));
+ if(parkour)quality.title='Graphics quality is fixed on this map';
+ const feed=new HudFeed();
+ let previousHealth=100,lastTick=-Infinity,flashUntil=0,lastHint='',hintUntil=0;
+ const set=(node,value)=>{const next=String(value);if(node.textContent!==next)node.textContent=next;};
+ const tools=new Map();
+ for(const entry of abilityReadouts({},parkour,true)){
+  const node=document.createElement('button');
+  node.type='button';
+  const key=entry.display==='Space'?' ':entry.display.toLowerCase();
+  node.dataset.heroKey=key;
+  const emit=type=>window.dispatchEvent(new KeyboardEvent(type,{key,bubbles:true}));
+  node.onpointerdown=event=>{event.preventDefault();node.setPointerCapture(event.pointerId);emit('keydown');};
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])node.addEventListener(type,()=>emit('keyup'));
+  node.onclick=event=>{if(event.detail!==0)return;emit('keydown');emit('keyup');};
+  node.className='instrument-ability';
+  node.innerHTML=`<i></i><kbd>${entry.display}</kbd><span>${entry.label}</span>`;
+  abilities.append(node);
+  tools.set(entry.label,{node,fill:node.firstElementChild});
  }
  return {
-  element:root,radar:refs.radar,
+  element:root,
   update(values,time=performance.now()){
-   const state=hudView({...previous,...values},parkour?36:936),running=state.status==='running';
-   if(running&&(!previous||previous.status==='ready')){startedAt=time;lastInput=time;}
-   if(previous&&state.bolts>previous.bolts){feed.push(`Bolt collected +${state.bolts-previous.bolts}`,time,'bolts');flashUntil=time+450;}
-   if(previous&&state.topSpeed<previous.topSpeed)reportedPeak=0;
-   if(running&&state.topSpeed>reportedPeak+10&&time-recordTime>1600){feed.push(`New top speed / ${Math.round(state.topSpeed)} km/h`,time,'speed');reportedPeak=state.topSpeed;recordTime=time;}
-   root.hidden=state.status==='ready';root.classList.toggle('is-paused',!running);root.classList.toggle('is-boosting',!!state.boosting);root.classList.toggle('is-fast',state.nearLimit);
-   root.classList.toggle('is-pickup',time<flashUntil);root.classList.toggle('show-keys',time-startedAt<6000||time-lastInput>4000);
-   refs['health-row'].classList.toggle('is-low',state.lowHealth);refs['energy-row'].classList.toggle('is-full',state.energy>=99.5);
-   root.style.setProperty('--speed',state.speedRatio);root.style.setProperty('--energy',state.energyRatio);root.style.setProperty('--health',state.healthRatio);root.style.setProperty('--hud-radar-angle',`${-state.heading}rad`);root.style.setProperty('--spin-duration',`${state.spinSeconds}s`);
-   const dt=Math.min(.1,(time-lastFrame)/1000);lastFrame=time;if(!reduced.matches&&running)ringAngle=(ringAngle+dt*(12+state.speedRatio*180))%360;root.style.setProperty('--ring-angle',`${ringAngle}deg`);
-   if(time-lastTick>=80||!previous){
-    lastTick=time;setText('speed',Math.round(state.speed),true);setText('top-speed',Math.round(state.topSpeed));setText('health',Math.round(state.health));setText('energy',Math.round(state.energy));setText('bolts',state.bolts,true);
-    setText('distance',state.distance>=1000?(state.distance/1000).toFixed(2):Math.floor(state.distance));setText('distance-unit',state.distance>=1000?'km':'m');setText('braking',state.braking??'—');setText('street',state.street||'');setText('players',state.players??1);setText('player-label',(state.players??1)===1?'player':'players');setText('heading',state.headingText);
-    setText('connection',state.connection||'Connecting');refs['connection-dot'].classList.toggle('is-connected',state.connection==='Connected');
-    for(const type of ['health','energy'])refs[`${type}-meter`].setAttribute('aria-valuenow',String(Math.round(state[type])));
-    root.querySelector('#hud-phase').setAttribute('aria-checked',String(!!state.phasing));
-    renderFeed(time);drawRadar?.(refs.radar,state);
+   const state=hudView(values,values.speedLimit);
+   root.hidden=state.status==='ready';
+   root.classList.toggle('is-paused',state.status==='paused');
+   if(time-lastTick<50)return;
+   lastTick=time;
+   if(state.health<previousHealth)flashUntil=time+180;
+   previousHealth=state.health;
+   nodes['health-row'].classList.toggle('is-low',state.lowHealth);
+   nodes['health-row'].classList.toggle('is-hit',time<flashUntil);
+   for(const [name,ratio] of Object.entries({health:state.healthRatio,energy:state.energyRatio,speed:state.speedRatio})){
+    const {track,fill}=meters[name];
+    fill.style.transform=`scaleX(${ratio})`;
+    track.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
+    set(nodes[name],Math.round(state[name]));
    }
-   if(!running)clearPressed();previous=state;
+   set(nodes.street,state.street||'');
+   set(nodes.network,`${state.connection||'Connecting'} · ${state.players||1} ${state.players===1?'player':'players'}`);
+   set(nodes.heading,state.headingText);
+   root.style.setProperty('--north',`${-state.heading}rad`);
+   nodes.flight.hidden=state.hero!=='atlas';
+   set(nodes['flight-state'],state.flightLabel||'Grounded');
+   set(nodes.altitude,state.flying?`${Math.round(state.altitude||0)} m AGL`:'');
+   const visible=new Set();
+   for(const entry of abilityReadouts(state,parkour)){
+    const {node,fill}=tools.get(entry.label);
+    visible.add(entry.label);
+    node.classList.toggle('is-cooling',entry.ready<1);
+    fill.style.transform=`scaleX(${entry.ready})`;
+   }
+   for(const [label,{node}] of tools)node.hidden=!visible.has(label);
+   abilities.inert=state.status!=='running';
+   const hint=state.hero!=='atlas'?'':state.boostExhausted?'Release Shift to reset boost':state.flying?'Space climb · C descend · R exit flight':state.grounded?'R take off':'R engage flight';
+   if(hint!==lastHint){lastHint=hint;hintUntil=time+4200;set(nodes.hint,hint);}
+   nodes.hint.style.opacity=hint&&time<hintUntil?'1':'0';
+   const message=feed.read(time).at(-1);
+   set(nodes.event,message?.message||'');
+   nodes.event.style.opacity=String(message?.opacity||0);
+   drawRadar?.(nodes.radar,state);
   },
-  event(message,key){feed.push(String(message),performance.now(),key);},
-  reset(){previous=null;reportedPeak=0;recordTime=-Infinity;startedAt=0;feed.clear();renderFeed(performance.now());clearPressed();},
-  destroy(){window.removeEventListener('keydown',onKey);window.removeEventListener('keyup',onKey);window.removeEventListener('pointerdown',onPointer);window.removeEventListener('blur',clearPressed);root.remove();}
+  event(message){feed.push(message,performance.now());},
+  reset(){previousHealth=100;lastTick=-Infinity;flashUntil=0;lastHint='';feed.clear();},
+  destroy(){root.remove();}
  };
 }

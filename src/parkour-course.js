@@ -12,9 +12,9 @@ export function createCourse(){
  function contains(p,x,z,margin=0){const q=platformLocal(p,x,z);return p.active&&Math.abs(q.x)<=p.width/2-margin&&Math.abs(q.z)<=p.depth/2-margin;}
  function supportAt(x,z,y=Infinity,margin=0){return platforms.filter(p=>p.top<=y+.05&&contains(p,x,z,margin)).sort((a,b)=>b.top-a.top)[0]??null;}
  let collision=createCollider();
- function rebuild(){collision=createCollider(platforms.filter(p=>p.active).map(p=>({height:p.top,wallRunnable:false,polygon:[[-p.width/2,-p.depth/2],[p.width/2,-p.depth/2],[p.width/2,p.depth/2],[-p.width/2,p.depth/2]].map(([x,z])=>{const q=platformPoint(p,x,z);return [q.x,q.z];})})));}
+ function rebuild(){collision=createCollider(platforms.filter(p=>p.active).map(p=>({height:p.top,minY:p.top-2,wallRunnable:false,polygon:[[-p.width/2,-p.depth/2],[p.width/2,-p.depth/2],[p.width/2,p.depth/2],[-p.width/2,p.depth/2]].map(([x,z])=>{const q=platformPoint(p,x,z);return [q.x,q.z];})})));}
  rebuild();
- const collider={contacts:(...args)=>collision.contacts(...args),blocked:(...args)=>collision.blocked(...args),surface:(x,z,y)=>supportAt(x,z,y)?.top??-60,terrain:()=>({height:-60,grip:1,kind:'red-sand'})};
+ const collider={cameraBlocked:(...args)=>collision.cameraBlocked(...args),contacts:(...args)=>collision.contacts(...args),blocked:(...args)=>collision.blocked(...args),surface:(x,z,y)=>supportAt(x,z,y)?.top??-60,terrain:()=>({height:-60,grip:1,kind:'red-sand'})};
  const spawn={x:0,z:4};let checkpoint={...spawn,top:0},nextZone=0,collected=0,complete=false,motionTime=0;
  const course={platforms,checkpoints,orbs,spawn,finish,collider,supportAt,motionSpeed:WORLD_MOTION.speed,get motionTime(){return motionTime;},advance,update};
  function advance(dt,w){

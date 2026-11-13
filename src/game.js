@@ -6,13 +6,13 @@ export function nearestSegment(x,z,a,b){const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.m
 export function createCollider(objects=[],bounds=null){
  const cells=new Map(),size=80;
  for(const object of objects){const xs=object.polygon.map(p=>p[0]),zs=object.polygon.map(p=>p[1]);for(let x=Math.floor(Math.min(...xs)/size);x<=Math.floor(Math.max(...xs)/size);x++)for(let z=Math.floor(Math.min(...zs)/size);z<=Math.floor(Math.max(...zs)/size);z++){const key=`${x},${z}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(object);}}
- function contacts(x,z,y=0,r=PLAYER_RADIUS){const found=[],near=new Set();for(let i=Math.floor((x-r)/size);i<=Math.floor((x+r)/size);i++)for(let j=Math.floor((z-r)/size);j<=Math.floor((z+r)/size);j++)for(const o of cells.get(`${i},${j}`)||[])near.add(o);
-  for(const o of near){if(y>=o.height||y+1.86<(o.minY??-Infinity))continue;let closest=null,best=Infinity;for(let i=0;i<o.polygon.length;i++){const q=nearestSegment(x,z,o.polygon[i],o.polygon[(i+1)%o.polygon.length]);const d=Math.hypot(x-q.x,z-q.z);if(d<best){closest=q;best=d;}}
+ function contacts(x,z,y=0,r=PLAYER_RADIUS,height=1.86){const found=[],near=new Set();for(let i=Math.floor((x-r)/size);i<=Math.floor((x+r)/size);i++)for(let j=Math.floor((z-r)/size);j<=Math.floor((z+r)/size);j++)for(const o of cells.get(`${i},${j}`)||[])near.add(o);
+  for(const o of near){if(y>=o.height||y+height<(o.minY??-Infinity))continue;let closest=null,best=Infinity;for(let i=0;i<o.polygon.length;i++){const q=nearestSegment(x,z,o.polygon[i],o.polygon[(i+1)%o.polygon.length]);const d=Math.hypot(x-q.x,z-q.z);if(d<best){closest=q;best=d;}}
    const inside=insidePolygon(x,z,o.polygon);if(inside||best<r){let nx=inside?closest.x-x:x-closest.x,nz=inside?closest.z-z:z-closest.z,len=Math.hypot(nx,nz);if(len<1e-8){nx=1;nz=0;len=1;}found.push({nx:nx/len,nz:nz/len,depth:inside?r+best:r-best,object:o});}
   }
   if(bounds){if(x<bounds.minX+r)found.push({nx:1,nz:0,depth:bounds.minX+r-x});if(x>bounds.maxX-r)found.push({nx:-1,nz:0,depth:x-bounds.maxX+r});if(z<bounds.minZ+r)found.push({nx:0,nz:1,depth:bounds.minZ+r-z});if(z>bounds.maxZ-r)found.push({nx:0,nz:-1,depth:z-bounds.maxZ+r});}return found;
  }
- return {surface:(x,z,y)=>(cells.get(`${Math.floor(x/size)},${Math.floor(z/size)}`)||[]).reduce((top,o)=>Number.isFinite(o.height)&&o.height<=y+.05&&insidePolygon(x,z,o.polygon)?Math.max(top,o.height):top,0),contacts,blocked:(x,z,y=0)=>contacts(x,z,y).length>0};
+ return {bounds,cameraBlocked:(x,z,y)=>contacts(x,z,y-.16,.24,.32).length>0,surface:(x,z,y)=>(cells.get(`${Math.floor(x/size)},${Math.floor(z/size)}`)||[]).reduce((top,o)=>Number.isFinite(o.height)&&o.height<=y+.05&&insidePolygon(x,z,o.polygon)?Math.max(top,o.height):top,0),contacts,blocked:(x,z,y=0)=>contacts(x,z,y).length>0};
 }
 const empty=createCollider();
 export function stepWorld(s,input,dt,collider=empty,physics=PHYSICS){
@@ -91,6 +91,14 @@ export function stepWorld(s,input,dt,collider=empty,physics=PHYSICS){
 export function hitTraffic(s,car={x:s.x+1,z:s.z,vx:0,vz:0}){if(s.status!=='running'||s.cooldown>0||s.phasing)return false;let nx=s.x-car.x,nz=s.z-car.z,n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const approach=(s.vx-(car.vx||0))*nx+(s.vz-(car.vz||0))*nz;if(approach<0){s.vx-=1.12*approach*nx;s.vz-=1.12*approach*nz;}s.vx*=.55;s.vz*=.55;s.speed=Math.hypot(s.vx,s.vz);s.hits++;s.energy=Math.max(0,s.energy-10);s.cooldown=1.3;s.impact=1;return true;}
 export function collectEnergy(s){s.energy=Math.min(100,s.energy+25);s.collected++;}
 export function cameraClearance(x,z,offsetX,offsetZ,collider=empty,y=1.5){const steps=Math.max(1,Math.ceil(Math.hypot(offsetX,offsetZ)/.2));for(let i=1;i<=steps;i++)if(collider.blocked(x+offsetX*i/steps,z+offsetZ*i/steps,y))return (i-1)/steps;return 1;}
-export function updateView(view,input,dt){return {yaw:view.yaw+((input.right?1:0)-(input.left?1:0))*1.65*dt,pitch:Math.max(.08,Math.min(1.15,view.pitch+((input.up?1:0)-(input.down?1:0))*.75*dt))};}
+export function cameraSweep(x,z,fromY,toX,toY,toZ,collider=empty){
+ const steps=Math.max(1,Math.ceil(Math.hypot(toX,toZ,toY-fromY)/.2));
+ const blocked=collider.cameraBlocked??((x,z,y)=>collider.blocked(x,z,y));
+ for(let i=1;i<=steps;i++){const t=i/steps,y=fromY+(toY-fromY)*t,px=x+toX*t,pz=z+toZ*t;
+  if(blocked(px,pz,y)||y<=(collider.terrain?.(px,pz)?.height??0)+.15)return (i-1)/steps;
+ }
+ return 1;
+}
+export function updateView(view,input,dt,flight=false){return {yaw:view.yaw+((input.right?1:0)-(input.left?1:0))*1.65*dt,pitch:Math.max(flight?-1.48:.08,Math.min(flight?1.48:1.15,view.pitch+((input.up?1:0)-(input.down?1:0))*.75*dt))};}
 
 export const PARKOUR=Object.freeze({...PHYSICS,runSpeed:10,boostSpeed:10,acceleration:34,braking:90,reverseBraking:110,airAcceleration:14,airTurnRate:2.4,fallGravity:1.65,coyoteTime:.11});

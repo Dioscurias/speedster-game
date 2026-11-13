@@ -10,3 +10,18 @@ export function controlHints(parkour=false){
  const basic=[{key:'wasd',display:'W A S D',label:'Move',icon:'move'},{key:'arrows',display:'↑ ← ↓ →',label:'Look',icon:'look'},{key:' ',display:'SPACE',label:'Jump',icon:'jump'}];
  return basic.concat(parkour?[{key:'e',display:'E',label:'Blink',icon:'phase'},{key:'f',display:'F',label:'Hand blast',icon:'blast'}]:[{key:'shift',display:'SHIFT',label:'Boost',icon:'bolt'},{key:'q',display:'Q',label:'Phase',icon:'phase'},{key:'e',display:'E',label:'Slow time',icon:'slow'}]);
 }
+
+const atlasKeys=[['R','Flight'],['Shift','Boost'],['B','Air brake'],['Space','Super jump'],['V','Wall punch'],['X','Ground slam']];
+const parkourKeys=[['E','Blink'],['F','Hand blast']];
+const speedsterKeys=[['Space','Jump'],['Shift','Boost'],['Q','Phase'],['E','Slow time']];
+export function abilityReadouts(state,parkour,all=false){
+ const keys=all?[...atlasKeys,...speedsterKeys.filter(([,label])=>label!=='Boost'),...(parkour?parkourKeys:[])]:state.hero==='atlas'?[...atlasKeys,...(parkour?parkourKeys:[])]:speedsterKeys.slice(0,parkour?2:4);
+ return keys.map(([display,label])=>{
+  const blast=state.abilities?.blast,blink=state.abilities?.teleports;
+  const ready=label==='Blink'&&blink&&!blink.available?Math.max(0,...blink.pips)
+   :label==='Hand blast'&&blast?(blast.aiming?blast.charge:1-blast.cooldown/state.blastCooldown)
+   :label==='Wall punch'?1-(state.punchTime||0)/.4
+   :label==='Boost'?(state.energy??100)/100:1;
+  return {display,label,ready:clamp(number(ready,1),0,1)};
+ });
+}

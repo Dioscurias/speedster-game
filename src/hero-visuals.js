@@ -1,23 +1,28 @@
 import * as THREE from 'three';
+import {cameraSweep} from './game.js';
+const up=new THREE.Vector3(0,1,0);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function flightPose(w){
  if(w.hero!=='atlas'||!w.flying)return {pitch:0,bank:0,armSpread:0};
  if(w.slamming)return {pitch:-2.7,bank:0,armSpread:.2};
- const horizontal=Math.hypot(w.vx||0,w.vz||0),travel=clamp(horizontal/55,0,1);
+ const horizontal=Math.hypot(w.vx||0,w.vz||0),travel=clamp(Math.hypot(horizontal,(w.vy||0)*.55)/55,0,1);
  const climb=Math.atan2(w.vy||0,Math.max(1,horizontal));
  return {pitch:travel*(-(w.airBraking?.35:w.boosting?1.48:1.2)+clamp(climb,-.6,.8)),bank:w.flightBank||0,armSpread:travel*(w.boosting?.18:1.05)};
 }
-export function poseHero(animator,model,w,dt=1/60){
+export function poseHero(animator,model,w,dt=1/60,heading=w.heading||0){
  if(w.hero!=='atlas'||w.status==='paused'||dt<=0)return;
  const atlas=true,pose=flightPose(w),step=clamp(dt,0,.1);
- const motion=animator.atlasMotion??={pitch:0,bank:0,travel:0,boost:0,blend:0,time:0};motion.time+=step;
+ const motion=animator.atlasMotion??={travel:0,boost:0,blend:0,time:0};motion.time+=step;
  const ease=(from,to,rate)=>from+(to-from)*(1-Math.exp(-step*rate));
- motion.pitch=ease(motion.pitch,pose.pitch,w.slamming?12:7);motion.bank=ease(motion.bank,pose.bank,5);
+
  motion.travel=ease(motion.travel,w.flying?clamp(Math.hypot(w.vx||0,w.vz||0)/55,0,1):0,5);
  motion.boost=ease(motion.boost,w.boosting?1:0,6);motion.blend=ease(motion.blend,w.flying?1:0,w.grounded?12:7);
  model.scale.set(1.05,1.03,1.04);
  const breathing=Math.sin(motion.time*2.1),hover=motion.blend*(1-motion.travel);
- model.rotation.x=motion.pitch+breathing*.012*hover;model.rotation.z=motion.bank+Math.sin(motion.time*1.4)*.014*hover;
+  const tilt=motion.tilt??=new THREE.Quaternion(),target=motion.targetTilt??=new THREE.Quaternion();
+ target.setFromEuler(new THREE.Euler(pose.pitch+breathing*.012*hover,0,pose.bank+Math.sin(motion.time*1.4)*.014*hover,'YXZ'));
+ tilt.slerp(target,1-Math.exp(-step*(w.slamming?12:7)));
+ model.quaternion.setFromAxisAngle(up,-heading).multiply(tilt);
  if(motion.blend>.01){
   animator.bodyBend('Spine',(-.06+breathing*.018)*motion.blend);
   animator.bodyBend('Neck',breathing*.012*hover);
@@ -52,4 +57,14 @@ export function inspectHero(model,camera){
 export function stabilizeFlightCamera(camera,target,w){
  if(w.hero!=='atlas'||!w.flying)return;
  camera.position.y=clamp(camera.position.y,target.y-3,target.y+3);
+}
+
+export function followHeroCamera(camera,target,w,collider,dt){
+ const anchor=w.y+1.4;
+ camera.position.lerp(target,1-Math.exp(-dt*10));
+ stabilizeFlightCamera(camera,target,w);
+ if(w.phasing)return;
+ const {x,y,z}=camera.position;
+ const fraction=cameraSweep(w.x,w.z,anchor,x,y,z,collider);
+ camera.position.set(x*fraction,anchor+(y-anchor)*fraction,z*fraction);
 }

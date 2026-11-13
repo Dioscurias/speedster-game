@@ -1,10 +1,10 @@
-# Speedster Game
+# Hero Roam
 
 Independent source repository and Vercel deployment.
 
 Run `npm ci`, then `npm run dev`. Use `npm test`, `npm run build`, and `npm run preview` for validation.
 
-Speedster owns both game maps, HUD, physics, game assets and multiplayer. The root `/` starts the game directly. Manta Ray is maintained in its own repository and hosting project. Configure `VITE_MANTA_ORIGIN` to authorize a different lab host for embedded map changes and resume messages.
+Hero Roam owns both game maps, HUD, physics, game assets and multiplayer. The root `/` starts the game directly. Manta Ray is maintained in its own repository and hosting project. Configure `VITE_MANTA_ORIGIN` to authorize a different lab host for embedded map changes and resume messages.
 
 Production: https://speedster-game.vercel.app
 
@@ -36,10 +36,14 @@ The frontend stays on Vercel. A Cloudflare Worker (`speedster-rooms`) routes eac
 - Set `VITE_ROOM_URL` at frontend build time to override it. For local rooms: `VITE_ROOM_URL=ws://127.0.0.1:8787 npm run dev`, alongside `npm run dev:rooms`.
 - Add `?room=friends` to use another room; share the same URL and map. There is no password or access control on room names.
 - `npm run deploy:rooms` deploys through your authenticated Wrangler account. `worker/wrangler.jsonc` pins the runtime date supported by the tested installation and declares the binding/migration.
-- The origin allowlist accepts Speedster Vercel deployments and localhost. Add any custom game domain to `worker/rooms.js` before switching domains.
+- The origin allowlist accepts the existing game’s Vercel deployments and localhost. Add any custom game domain to `worker/rooms.js` before switching domains.
 
 Movement is client simulated for casual play; this is not a competitive anti-cheat server. The server sanitizes snapshots, assigns identity/color, enforces capacity and message cadence, validates impact range and caps damage history. Parkour progress, moving-platform timing, pickups and hand-blast targets remain local to each player's run; multiplayer shares presence and impact scars. Cloudflare usage is subject to the account's plan and quotas; no paid plan was enabled by this change.
 
 ## Verification
 
 `npm test` checks physics, maps, animation, snapshots and reconnect logic. `npm run test:rooms` runs real WebSockets and SQLite in the local Cloudflare runtime (presence, room isolation, impacts, late joins, departures and 20-player cap). `npm run test:browser` checks both maps and responsive navigation. `node scripts/powerhouse-browser-check.mjs` exercises two independent browser sessions against the shared room service, flight/boost/punch, live maps and disconnects. Use `TEST_URL` and `CHROME_PATH` to override the frontend URL and Chrome executable. Development-only positioning diagnostics are removed from production builds.
+
+## Product slug
+
+The product slug is `hero-roam`. Set it in the Vercel project dashboard and in the Manta project card and embed route when coordinating the public rename. Add any new game origin to the room Worker allowlist before switching. The production URL and the existing embed path still work under their current names.

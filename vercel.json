@@ -9,6 +9,8 @@
   },
   "cleanUrls": true,
   "redirects": [
+    { "source": "/hero-roam", "destination": "/", "permanent": false },
+    { "source": "/projects/hero-roam/play", "destination": "/", "permanent": false },
     {
       "source": "/speedster",
       "destination": "/",

@@ -78,8 +78,8 @@ export class Multiplayer{
       const age=Math.min(.18,Math.max(0,(performance.now()-avatar.receivedAt)/1000));
       const target=new THREE.Vector3(player.x+player.vx*age,player.y+(player.flying?player.vy*age:0),player.z+player.vz*age);avatar.position.lerp(target,1-Math.exp(-dt*16));
       avatar.root.position.set(avatar.position.x-world.x,avatar.position.y,avatar.position.z-world.z);
-      const turn=Math.atan2(Math.sin(-player.heading-avatar.root.rotation.y),Math.cos(-player.heading-avatar.root.rotation.y));avatar.root.rotation.y+=turn*(1-Math.exp(-dt*16));const speed=Math.hypot(player.vx,player.vz);
-      if(avatar.animation){const state={...createWorld(),...player,status:'running',speed,worldTime:performance.now()/1000};avatar.animation.update(state,{forward:speed>.5,viewYaw:player.heading},dt);poseHero(avatar.animation,avatar.model,state,dt);}
+      const turn=Math.atan2(Math.sin(-player.heading-avatar.root.rotation.y),Math.cos(-player.heading-avatar.root.rotation.y));avatar.root.rotation.y+=turn*(1-Math.exp(-dt*16));const speed=Math.hypot(player.vx,player.vz,player.flying?player.vy:0);
+      if(avatar.animation){const state={...createWorld(),...player,status:'running',speed,worldTime:performance.now()/1000};avatar.animation.update(state,{forward:speed>.5,viewYaw:player.heading},dt);poseHero(avatar.animation,avatar.model,{...state,heading:0},dt);}
       avatar.model.visible=player.health>0;avatar.label.visible=player.health>0;avatar.model.traverse(object=>{if(object.isMesh){object.material.transparent=player.phasing;object.material.opacity=player.phasing?.48:1;}});
       const name=sanitizePlayerName(player.name),labelState=JSON.stringify([name,player.health]);
       if(labelState!==avatar.labelState){
