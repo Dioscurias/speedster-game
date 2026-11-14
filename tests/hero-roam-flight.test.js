@@ -110,29 +110,29 @@ test('a capsule can traverse a narrow gap and slides after a full-speed glancing
  assert.equal(c.blocked(glancing.x,glancing.z,glancing.y),false);
 });
 
-test('Atlas reaches cruise and supersonic boost, then carries momentum after releasing thrust',()=>{
+test('Atlas reaches cruise and boost, then carries momentum after releasing thrust',()=>{
  const w=atlas({y:200,grounded:false});
  resetFlight(w,'HOVER');
  simulate(w,{forward:true},2);
- assert.ok(Math.abs(w.speed*3.6-400)<.1);
+ assert.ok(Math.abs(w.speed*3.6-300)<.1);
  simulate(w,{forward:true,boost:true},2);
- assert.ok(Math.abs(w.speed*3.6-1350)<.1);
+ assert.ok(Math.abs(w.speed*3.6-600)<.1);
  const z=w.z;
- simulate(w,{},.5);
+ simulate(w,{},1);
  assert.equal(flightSnapshot(w).state,'GLIDE');
- assert.ok(w.speed*3.6>1150&&w.z<z-150);
+ assert.ok(w.speed*3.6>480&&w.z<z-145);
  simulate(w,{brake:true},2);
  assert.ok(w.speed<.4);
 });
 
-test('supersonic flight slows before the map edge and altitude ceiling',()=>{
+test('boosted flight slows before the map edge and altitude ceiling',()=>{
  const collider=createCollider([],{minX:-900,maxX:900,minZ:-900,maxZ:900});
  for(const [axis,limit,input] of [
   ['x',900,{right:true,boost:true}],
   ['y',FLIGHT.ceiling,{ascend:true,boost:true}],
  ]){
-  const w=atlas({y:150,grounded:false});
-  resetFlight(w,'HOVER');
+  const w=atlas({y:150,grounded:false,[axis]:limit-250,[`v${axis}`]:FLIGHT.boostSpeed});
+  resetFlight(w,'BOOST');
   let furthest=w[axis],peakImpact=0;
   for(let i=0;i<480;i++){
    stepHero(w,input,1/120,collider);

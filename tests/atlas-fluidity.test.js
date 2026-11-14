@@ -51,3 +51,18 @@ test('opposite steering inputs extend opposite arms at the same speed',()=>{
  assert.ok(right.RightArm[1]>left.RightArm[1]+.08);
  assert.ok(left.LeftLeg[2]>right.LeftLeg[2]+.05);
 });
+
+test('hips follow the shoulders on a turn and retain counter-rotation briefly after reversal',()=>{
+ const bends={};
+ const animator={bodyBend(bone,angle,axis='x'){bends[bone+axis]=angle;}};
+ const model=new THREE.Group(),w={...hover,vz:-72,flightBank:.42};
+ for(let i=0;i<90;i++)poseHero(animator,model,w,1/60);
+ assert.ok(bends.Spine2y>.2);
+ assert.ok(bends.Hipsz<-.1);
+ w.flightBank=-.42;
+ for(let i=0;i<4;i++)poseHero(animator,model,w,1/60);
+ assert.ok(bends.Spine2y<0);
+ assert.ok(animator.atlasMotion.hipSteer>0);
+ for(let i=0;i<45;i++)poseHero(animator,model,w,1/60);
+ assert.ok(animator.atlasMotion.hipSteer<-.9);
+});

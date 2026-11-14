@@ -16,20 +16,26 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
   <div class="instrument-map"><button class="hud-radar" type="button" title="Expand map" aria-label="Expand map"><canvas data-hud-radar aria-label="Nearby points of interest"></canvas></button><span class="instrument-north" aria-hidden="true">N</span><span class="instrument-label" data-hud-heading>N 0°</span></div>
   <div class="instrument-tools">${tool('quality','Graphics quality','look')}${tool('pause','Pause game','pause')}${tool('fullscreen','Toggle fullscreen','expand')}${tool('guide','Guide','guide')}<a href="https://manta.bet/" target="_top" title="Back to manta.bet" aria-label="Back to manta.bet">${icon('home')}</a></div>
  </section>
- <section class="instrument-vitals">
-  <div class="instrument-line" data-hud-health-row><span class="instrument-label">Health</span>${meter('health','Health')}<output data-hud-health>100</output></div>
-  <div class="instrument-line"><span class="instrument-label">Energy</span>${meter('energy','Energy')}<output data-hud-energy>100</output></div>
- </section>
- <section class="instrument-speed" aria-label="Velocity">
-  <span class="instrument-label">Speed</span>
-  <div><output data-hud-speed>0</output> <span class="instrument-label">km/h</span></div>
-  ${meter('speed','Speed relative to limit')}
-  <div class="instrument-flight" data-hud-flight hidden><span data-hud-flight-state></span><span data-hud-altitude></span></div>
- </section>
- <div class="instrument-bottom"><p class="instrument-hint" data-hud-hint></p><div class="instrument-abilities" aria-label="Abilities"></div><p class="instrument-event" data-hud-event role="status"></p></div>`;
+ <div class="instrument-deck">
+  <section class="instrument-vitals" aria-label="Vitals">
+   <div class="instrument-line" data-hud-health-row><span class="instrument-label">Health</span><output data-hud-health>100</output>${meter('health','Health')}</div>
+   <div class="instrument-line"><span class="instrument-label">Energy</span><output data-hud-energy>100</output>${meter('energy','Energy')}</div>
+  </section>
+  <div class="instrument-bottom"><p class="instrument-event" data-hud-event role="status"></p><p class="instrument-hint" data-hud-hint></p><div class="instrument-abilities" aria-label="Abilities"></div></div>
+  <section class="instrument-speed" aria-label="Velocity">
+   <div class="instrument-speed-header"><span class="instrument-label">Speed</span><span data-hud-flight-state hidden></span></div>
+   <div class="instrument-speed-value"><output data-hud-speed>0</output> <span class="instrument-label">km/h</span></div>
+   <div class="instrument-scale">${meter('speed','Speed relative to limit')}<i data-hud-cruise hidden></i></div>
+   <div class="instrument-flight" data-hud-flight hidden>
+    <div><span class="instrument-label">Altitude</span><output data-hud-altitude></output></div>
+    <div><span class="instrument-label">Vertical</span><output data-hud-vertical></output></div>
+   </div>
+  </section>
+ </div>`;
+
  parent.append(root);
  const get=name=>root.querySelector(`[data-hud-${name}]`);
- const nodes=Object.fromEntries(['street','network','heading','radar','health','energy','speed','flight','flight-state','altitude','hint','event','health-row'].map(name=>[name,get(name)]));
+ const nodes=Object.fromEntries(['street','network','heading','radar','health','energy','speed','flight','flight-state','altitude','vertical','cruise','hint','event','health-row'].map(name=>[name,get(name)]));
  const abilities=root.querySelector('.instrument-abilities');
  const meters=Object.fromEntries(['health','energy','speed'].map(name=>[name,{track:get(name+'-meter'),fill:get(name+'-fill')}]));
  const quality=root.querySelector('#hud-quality');
@@ -76,9 +82,14 @@ export function mountMantaHUD(parent,{parkour=false,drawRadar}={}){
    set(nodes.network,`${state.connection||'Connecting'} · ${state.players||1} ${state.players===1?'player':'players'}`);
    set(nodes.heading,state.headingText);
    root.style.setProperty('--north',`${-state.heading}rad`);
-   nodes.flight.hidden=state.hero!=='atlas';
+   nodes.flight.hidden=!state.airborne;
+   nodes['flight-state'].hidden=state.hero!=='atlas';
    set(nodes['flight-state'],state.flightLabel||'Grounded');
-   set(nodes.altitude,state.flying?`${Math.round(state.altitude||0)} m AGL`:'');
+   set(nodes.altitude,`${Math.round(state.altitude||0)} m AGL`);
+   set(nodes.vertical,`${state.verticalSpeed>0?'+':''}${state.verticalSpeed} m/s`);
+   nodes.cruise.hidden=!state.airborne;
+   nodes.cruise.style.left=`${state.cruiseRatio*100}%`;
+   meters.speed.track.setAttribute('aria-valuetext',`${Math.round(state.speed)} km/h`);
    const visible=new Set();
    for(const entry of abilityReadouts(state,parkour)){
     const {node,fill}=tools.get(entry.label);

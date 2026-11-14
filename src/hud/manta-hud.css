@@ -1,5 +1,5 @@
 .manta-hud{
- --instrument-ink:#fff;--instrument-black:#101010;--instrument-surface:rgba(0,0,0,.35);--instrument-line:rgba(255,255,255,.15);--instrument-panel-padding:9px 12px;--instrument-damage:#ff6255;
+ --instrument-ink:#fff;--instrument-black:#101010;--instrument-surface:rgba(10,12,14,.72);--instrument-line:rgba(255,255,255,.23);--instrument-panel-padding:9px 12px;--instrument-damage:#ff6255;
  --instrument-pad:clamp(20px,2vw,34px);--instrument-radar:clamp(96px,13vw,160px);--instrument-font:"Space Grotesk",system-ui,sans-serif;
  position:absolute;inset:0;z-index:15;pointer-events:none;color:var(--instrument-ink);
  font:500 13px/1.25 var(--instrument-font);font-variant-numeric:tabular-nums
@@ -21,26 +21,59 @@
 .instrument-tools{display:grid;align-content:start;gap:4px}
 .manta-game .instrument-tools :is(button,a){display:grid;place-items:center;pointer-events:auto;cursor:pointer;margin:0;padding:0;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid var(--instrument-line);border-radius:0;background:var(--instrument-black);color:var(--instrument-ink);box-shadow:none}
 .instrument-tools :is(button,a):hover{border-color:var(--instrument-ink)}.instrument-tools button:disabled{opacity:.45;cursor:default}.instrument-tools svg{width:14px;height:14px}
-.instrument-vitals,.instrument-speed{position:absolute;bottom:var(--instrument-pad);padding:var(--instrument-panel-padding);width:clamp(128px,15vw,210px)}
-.instrument-vitals{left:var(--instrument-pad);display:grid;gap:8px}.instrument-speed{right:var(--instrument-pad);text-align:right}
-.instrument-line{display:grid;grid-template-columns:4.5em 1fr 2em;align-items:center;gap:6px}.instrument-line output{text-align:right}
-.instrument-meter{height:5px;min-width:0;background:#ffffff25}.instrument-meter i{display:block;width:100%;height:100%;transform-origin:left;transition:transform .15s linear;background:var(--instrument-ink)}
+/* Each instrument occupies its own grid area, including at narrow widths. */
+.instrument-deck{
+ position:absolute;inset:auto var(--instrument-pad) var(--instrument-pad);
+ display:grid;grid-template-columns:clamp(144px,15vw,205px) minmax(0,1fr) clamp(176px,17vw,230px);
+ grid-template-areas:"vitals abilities speed";align-items:end;gap:12px
+}
+.instrument-vitals,.instrument-speed{padding:var(--instrument-panel-padding)}
+.instrument-vitals{grid-area:vitals;display:grid;gap:11px}
+.instrument-speed{grid-area:speed}
+.instrument-line{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:4px 10px}
+.instrument-line output{font-size:17px;text-align:right;font-weight:700}
+.instrument-line .instrument-meter{grid-column:1/-1}
+.instrument-meter{height:4px;min-width:0;background:#ffffff30}
+.instrument-meter i{display:block;width:100%;height:100%;transform-origin:left;transition:transform .15s linear;background:var(--instrument-ink)}
 .instrument-line.is-low output,.instrument-line.is-hit output{color:var(--instrument-damage)}
 .instrument-line.is-low i,.instrument-line.is-hit i{background:var(--instrument-damage)}
-.instrument-line.is-low i{animation:instrument-pulse 1.8s ease-in-out infinite alternate}.instrument-line.is-hit i{opacity:1;animation:none}
+.instrument-line.is-low i{animation:instrument-pulse 1.8s ease-in-out infinite alternate}
+.instrument-line.is-hit i{opacity:1;animation:none}
 @keyframes instrument-pulse{to{opacity:.48}}
-.instrument-speed output{font-size:30px;line-height:1.1}.instrument-speed .instrument-meter{margin-top:4px}
-.instrument-flight{display:flex;justify-content:space-between;margin-top:5px;font-size:10px;text-transform:uppercase;letter-spacing:.07em}
-.instrument-bottom{position:absolute;bottom:var(--instrument-pad);left:50%;width:max-content;max-width:calc(100% - 2 * var(--instrument-pad));transform:translateX(-50%);display:grid;justify-items:center}
-.instrument-abilities{display:flex;justify-content:center;flex-wrap:wrap;gap:3px}
-.manta-game .manta-hud .instrument-ability{pointer-events:auto;cursor:pointer;margin:0;color:inherit;font:inherit;position:relative;display:flex;align-items:center;gap:4px;padding:4px 5px;white-space:nowrap;font-size:10px}
+.instrument-speed-header{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
+.instrument-speed-header [data-hud-flight-state]{text-transform:uppercase;font-size:10px;letter-spacing:.06em;text-align:right}
+.instrument-speed-value{margin:3px 0 8px;display:flex;align-items:baseline;gap:7px}
+.instrument-speed-value output{font-size:clamp(27px,3vw,44px);font-weight:700;line-height:1}
+.instrument-scale{position:relative}
+.instrument-scale>[data-hud-cruise]{position:absolute;top:-3px;width:1px;height:10px;background:#fff;box-shadow:0 0 0 1px #151515}
+.instrument-flight{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:7px;border-top:1px solid var(--instrument-line)}
+.instrument-flight>div{display:grid;gap:3px}
+.instrument-flight>div+div{text-align:right}
+.instrument-flight :is(output,.instrument-label){white-space:nowrap}
+.instrument-bottom{grid-area:abilities;min-width:0;position:relative;display:grid;justify-items:center}
+.instrument-abilities{display:flex;justify-content:center;flex-wrap:wrap;gap:4px}
+.manta-game .manta-hud .instrument-ability{
+ pointer-events:auto;cursor:pointer;margin:0;color:inherit;font:inherit;position:relative;
+ display:flex;align-items:center;gap:6px;min-height:32px;padding:4px 7px;white-space:nowrap;font-size:11px
+}
 .instrument-ability i{position:absolute;inset:auto 0 0;height:1px;background:var(--instrument-ink);transform-origin:left}
-.manta-hud.is-paused .instrument-ability{pointer-events:none}.instrument-ability:is([data-state=cooling],[data-state=unavailable]){opacity:.56}
-.instrument-ability[data-state=active]{border-color:var(--instrument-ink)}.instrument-ability kbd{font:700 10px var(--instrument-font)}
-.instrument-hint,.instrument-event{margin:0;padding:4px 6px;opacity:0;transition:opacity .18s linear;text-align:center;font-size:11px}
-.instrument-event{position:absolute;bottom:100%;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:1100px){.instrument-bottom{bottom:calc(var(--instrument-pad) + 118px)}}
-@media(max-width:520px){.manta-hud{--instrument-radar:88px}.instrument-line{grid-template-columns:3.8em 1fr 1.8em}.instrument-speed output{font-size:24px}}
-@media(pointer:coarse){.manta-hud .instrument-vitals,.manta-hud .instrument-speed{bottom:calc(var(--instrument-pad) + 94px)}.instrument-bottom{bottom:calc(var(--instrument-pad) + 212px)}}
+.manta-hud.is-paused .instrument-ability{pointer-events:none}
+.instrument-ability:is([data-state=cooling],[data-state=unavailable]){opacity:.56}
+.manta-game .manta-hud .instrument-ability[data-state=active]{border-color:#fff;background:#fff;color:#101010}
+.manta-hud .instrument-ability kbd{font:700 10px var(--instrument-font);background:none;color:inherit;border:1px solid currentColor;border-radius:0;box-shadow:none;padding:1px 3px}
+.instrument-hint,.instrument-event{position:absolute;margin:0;padding:4px 7px;opacity:0;transition:opacity .18s linear;text-align:center;font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.instrument-hint{bottom:calc(100% + 5px)}
+.instrument-event{bottom:calc(100% + 31px)}
+@media(max-width:900px){
+ .instrument-deck{grid-template-columns:1fr 1fr;grid-template-areas:"abilities abilities" "vitals speed";gap:8px}
+ .instrument-vitals,.instrument-speed{width:min(100%,210px)}
+ .instrument-speed{justify-self:end}
+}
+@media(max-width:520px){
+ .manta-hud{--instrument-radar:88px;--instrument-pad:12px;--instrument-panel-padding:7px 8px}
+ .manta-game .manta-hud .instrument-ability{gap:4px;padding:3px 5px;font-size:10px;min-height:28px}
+ .instrument-flight{gap:4px}
+ .instrument-flight .instrument-label{letter-spacing:.08em}
+}
+@media(pointer:coarse){.instrument-deck{bottom:calc(var(--instrument-pad) + 94px)}}
 @media(prefers-reduced-motion:reduce){.manta-hud *{transition:none!important;animation:none!important}}
-.manta-hud .instrument-ability kbd{background:var(--instrument-black);color:var(--instrument-ink);border:1px solid currentColor;border-radius:0;box-shadow:none;padding:0 3px}
