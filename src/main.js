@@ -102,7 +102,7 @@ function updateScene(dt){
  if(flight){world.flightState=flight.state;world.flightOrientation=runner.quaternion.toArray();}impacts.update(world,active?dt:0);
  multiplayer?.update(dt);
  boostCamera+=(Number(world.boosting)-boostCamera)*(1-Math.exp(-dt*5));
- const flying=world.hero==='atlas'&&world.flying,fx=flightView(visual,dt,reducedMotion,animator);
+ const flying=world.hero==='atlas'&&world.flying,fx=flightView.update(visual,dt,reducedMotion,animator);
  const yaw=preview?view.yaw-.3:view.yaw,pitch=preview?.3:view.pitch,distance=flying?C.cameraDistance+boostCamera*C.cameraExtension+fx.lag:7+boostCamera*3,horizontal=Math.cos(pitch)*distance;
  const target=new THREE.Vector3(-Math.sin(yaw)*horizontal,rendered.y+(flying?C.cameraHeight:1.25)+Math.sin(pitch)*distance,Math.cos(yaw)*horizontal);
  const jumpCamera=jumpFX.camera(reducedMotion);target.y+=jumpCamera.dip;target.x+=jumpCamera.shake;
@@ -133,6 +133,7 @@ $('play-tab').onclick=()=>{if($('info-dialog').open)$('info-dialog').close();doc
 new ResizeObserver(()=>{const r=$('scene').getBoundingClientRect();renderer.setSize(r.width,r.height);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}).observe($('scene'));
 let last=performance.now(),lastHUD=0,lastSave=0,accumulator=0;
 function flightEvent(type,detail){
+ if(type==='boostStart')flightView.boostStart(world,view.yaw,reducedMotion);
  window.dispatchEvent(new CustomEvent('atlas:flight',{detail:{type,data:detail}}));
  if(type==='impact')impacts.kick=Math.max(impacts.kick,world.impact);
 }

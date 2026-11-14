@@ -57,6 +57,7 @@ if(import.meta.env.DEV)window.__parkour.debug={visuals:()=>inspectHero(runner,ca
 const notify=text=>window.dispatchEvent(new CustomEvent('speedster:event',{detail:{text}}));
 let boostCamera=0;
 function flightEvent(type,detail){
+ if(type==='boostStart')flightView.boostStart(world,view.yaw,$('reduced').checked);
  window.dispatchEvent(new CustomEvent('atlas:flight',{detail:{type,data:detail}}));
  if(type==='impact')impacts.kick=Math.max(impacts.kick,world.impact);
 }
@@ -83,7 +84,7 @@ function frame(now){requestAnimationFrame(frame);const rawDt=Math.max(0,(now-las
  if(flight&&animator){world.flightState=flight.state;world.flightOrientation=runner.quaternion.toArray();}
  multiplayer?.poll(now);multiplayer?.update(dt);impacts.update(world,simulationDelta);
  boostCamera+=(Number(world.boosting)-boostCamera)*(1-Math.exp(-dt*5));
- const flying=world.hero==='atlas'&&world.flying,flightFx=flightView(visual,dt,$('reduced').checked,animator);
+ const flying=world.hero==='atlas'&&world.flying,flightFx=flightView.update(visual,dt,$('reduced').checked,animator);
  const response=fx?.camera($('reduced').checked)??{fov:0,dip:0,shake:0},quake=impacts.camera($('reduced').checked);const distance=flying?C.cameraDistance+boostCamera*C.cameraExtension+flightFx.lag:7+boostCamera*3,horizontal=Math.cos(view.pitch)*distance;const target=new THREE.Vector3(-Math.sin(view.yaw)*horizontal+response.shake+quake.shake+($('reduced').checked?0:Math.sin(world.worldTime*97)*combat.shake),rendered.y+(flying?C.cameraHeight:1.25)+Math.sin(view.pitch)*distance+response.dip+quake.dip,Math.cos(view.yaw)*horizontal);
  followHeroCamera(camera,target,visual,world.hero==='atlas'?map.flightCollider:course.collider,dt);const lead=(flying?C.cameraLead:1.7)+flightFx.lag;camera.lookAt(Math.sin(view.yaw)*lead,rendered.y+(flying?C.cameraLook:1.35),-Math.cos(view.yaw)*lead);bankCamera(camera,world,$('reduced').checked);camera.fov=THREE.MathUtils.lerp(camera.fov,(flying?C.cameraFov+flightFx.fov:58+(world.hero==='atlas'?0:boostCamera*18))+response.fov+($('reduced').checked?0:combat.kick),1-Math.exp(-dt*8));camera.updateProjectionMatrix();sun.position.set(-35,world.y+60,25);sun.target.position.set(0,world.y,0);if(animator){
   const hand=new THREE.Vector3(.35,world.y+1.2,0);runner.updateMatrixWorld(true);animator.bones.RightHand?.bone.getWorldPosition(hand);hand.x+=world.x;hand.z+=world.z;

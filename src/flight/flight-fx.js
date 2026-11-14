@@ -23,8 +23,8 @@ export function createFlightView(sceneElement,scene){
  const limbs=['LeftHand','RightHand','LeftFoot','RightFoot'];
  let speedFov=0,movement=0,lag=0,vapor=0;
 
- return (world,dt,reducedMotion,animator)=>{
-  shockwave(world,dt,reducedMotion);
+ function update(world,dt,reducedMotion,animator){
+  shockwave.update(world,dt,reducedMotion);
   const flying=world.hero==='atlas'&&world.flying;
   const speed=flying?THREE.MathUtils.smoothstep(world.speed,C.hoverSpeed,C.boostSpeed):0;
   const ease=1-Math.exp(-dt*7);
@@ -49,5 +49,6 @@ export function createFlightView(sceneElement,scene){
   wind.classList.toggle('has-boost',flying&&world.boosting);
   return {fov:speedFov,lag};
 
- };
+ }
+ return {update,boostStart:shockwave.start};
 }

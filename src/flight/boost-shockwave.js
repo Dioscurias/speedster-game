@@ -1,10 +1,7 @@
 import * as THREE from 'three';
-import {FLIGHT as C} from './flight-config.js';
 
 const normal=new THREE.Vector3(0,0,1);
 const lifetime=.48;
-const triggerSpeed=C.boostSpeed*.82;
-const rearmSpeed=C.cruiseSpeed+(triggerSpeed-C.cruiseSpeed)*.45;
 
 export function createBoostShockwave(scene){
  const ring=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({
@@ -36,22 +33,25 @@ export function createBoostShockwave(scene){
  scene.add(ring);
 
  const origin=new THREE.Vector3(),velocity=new THREE.Vector3(),direction=new THREE.Vector3();
- let age=lifetime,armed=true,lastTime=0;
- return (world,dt,reducedMotion)=>{
+ let age=lifetime,lastTime=0;
+ function start(world,yaw,reducedMotion){
+  if(reducedMotion)return;
+  age=0;
+  lastTime=world.worldTime;
+  velocity.set(world.vx,world.vy,world.vz);
+  direction.copy(velocity);
+  if(direction.lengthSq()<1)direction.set(Math.sin(yaw),0,-Math.cos(yaw));
+  direction.normalize();
+  velocity.multiplyScalar(.91);
+  origin.set(world.x,world.y+.85,world.z).addScaledVector(direction,1.4);
+  ring.quaternion.setFromUnitVectors(normal,direction);
+ }
+ function update(world,dt,reducedMotion){
   if(reducedMotion||world.hero!=='atlas'||world.status==='ready'||world.status==='dead'||world.worldTime<lastTime){
-   age=lifetime;armed=true;ring.visible=false;
+   age=lifetime;ring.visible=false;
   }
   lastTime=world.worldTime;
   if(reducedMotion||world.hero!=='atlas'||world.status!=='running')return;
-  if(!world.flying||world.speed<rearmSpeed)armed=true;
-  if(armed&&world.flying&&world.boosting&&world.speed>=triggerSpeed){
-   armed=false;age=0;
-   velocity.set(world.vx,world.vy,world.vz).multiplyScalar(.91);
-   direction.copy(velocity).normalize();
-   origin.set(world.x,world.y+.85,world.z).addScaledVector(direction,1.4);
-   ring.quaternion.setFromUnitVectors(normal,direction);
-  }else age=Math.min(lifetime,age+dt);
-
   ring.visible=age<lifetime;
   if(!ring.visible)return;
   const progress=age/lifetime;
@@ -60,5 +60,7 @@ export function createBoostShockwave(scene){
   ring.position.z-=world.z;
   ring.scale.setScalar(1.15+8*Math.pow(progress,.62));
   ring.material.uniforms.age.value=progress;
- };
+  age+=dt;
+ }
+ return {start,update};
 }
